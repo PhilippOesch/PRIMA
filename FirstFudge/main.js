@@ -14,7 +14,7 @@ var FirstFudge;
         let cmpMesh = new ƒ.ComponentMesh(mesh); //attache Mesh to Node
         node.addComponent(cmpMesh); //Add Component into node component Map
         //The Material
-        let mtrSolidWhite = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("#fff")));
+        let mtrSolidWhite = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
         let cmpMaterial = new ƒ.ComponentMaterial(mtrSolidWhite);
         node.addComponent(cmpMaterial);
         //The Camera

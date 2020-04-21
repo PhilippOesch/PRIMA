@@ -19,7 +19,7 @@ namespace FirstFudge {
         node.addComponent(cmpMesh); //Add Component into node component Map
         
         //The Material
-        let mtrSolidWhite: ƒ.Material= new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("#fff")));
+        let mtrSolidWhite: ƒ.Material= new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
         let cmpMaterial: ƒ.ComponentMaterial= new ƒ.ComponentMaterial(mtrSolidWhite);
         node.addComponent(cmpMaterial);
 
