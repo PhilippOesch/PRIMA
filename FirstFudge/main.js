@@ -3,6 +3,7 @@ var FirstFudge;
 (function (FirstFudge) {
     var ƒ = FudgeCore;
     window.addEventListener("load", hndload);
+    let viewport; //viewport variable
     function hndload(_event) {
         const canvas = document.querySelector("canvas");
         //ƒ.RenderManager.initialize();
@@ -14,7 +15,7 @@ var FirstFudge;
         let cmpMesh = new ƒ.ComponentMesh(mesh); //attache Mesh to Node
         node.addComponent(cmpMesh); //Add Component into node component Map
         //The Material
-        let mtrSolidWhite = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
+        let mtrSolidWhite = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
         let cmpMaterial = new ƒ.ComponentMaterial(mtrSolidWhite);
         node.addComponent(cmpMaterial);
         //The Camera
@@ -24,10 +25,10 @@ var FirstFudge;
         cmpCamera.pivot.rotateY(180);
         cmpCamera.pivot.rotateX(-60);
         //The Viewport
-        FirstFudge.viewport = new ƒ.Viewport();
-        FirstFudge.viewport.initialize("Viewport", node, cmpCamera, canvas);
-        ƒ.Debug.log(FirstFudge.viewport);
-        FirstFudge.viewport.draw();
+        viewport = new ƒ.Viewport();
+        viewport.initialize("Viewport", node, cmpCamera, canvas);
+        ƒ.Debug.log(viewport);
+        viewport.draw();
     }
 })(FirstFudge || (FirstFudge = {}));
 //# sourceMappingURL=main.js.map
