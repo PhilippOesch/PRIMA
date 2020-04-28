@@ -10,6 +10,7 @@ var HouseScene;
     function hndload(_event) {
         canvas = document.querySelector("canvas");
         createScene();
+        document.addEventListener("keydown", hndKeydown);
         viewport.draw();
     }
     function createScene() {
@@ -19,6 +20,7 @@ var HouseScene;
         let clrStreet = new ƒ.Color(0.25, 0.25, 0.25, 1);
         //Ground
         sceneNode = createCompleteMeshNode("Ground", new ƒ.Material("clrGround", ƒ.ShaderUniColor, new ƒ.CoatColored(clrGround)), new ƒ.MeshCube(), new ƒ.Vector3(6, 0.5, 6));
+        //sceneNode.addComponent(new ƒ.ComponentTransform());
         //Street
         let streetNode = createCompleteMeshNode("street", new ƒ.Material("clrStreet", ƒ.ShaderUniColor, new ƒ.CoatColored(clrStreet)), new ƒ.MeshCube(), new ƒ.Vector3(6, 0.1, 1.5));
         let streetTransform = streetNode.getComponent(ƒ.ComponentTransform);
@@ -82,6 +84,19 @@ var HouseScene;
         cmpCamera.projectCentral(1, 45, ƒ.FIELD_OF_VIEW.DIAGONAL);
         camera.addComponent(cmpCamera);
         return camera;
+    }
+    function hndKeydown(_event) {
+        //switch for diffrent Keyboard keys
+        switch (_event.code) {
+            case ƒ.KEYBOARD_CODE.A:
+                sceneNode.cmpTransform.local.rotate(new ƒ.Vector3(0, 2, 0)); //Arrow-Up moves up the right paddle by 0.3 units
+                break;
+            case ƒ.KEYBOARD_CODE.D:
+                sceneNode.cmpTransform.local.rotate(new ƒ.Vector3(0, -2, 0)); //Arrow-Down moves down the right paddle by 0.3 units
+                break;
+        }
+        //ƒ.RenderManager.update(); //not working
+        viewport.draw(); //update the viewport
     }
 })(HouseScene || (HouseScene = {}));
 //# sourceMappingURL=main.js.map

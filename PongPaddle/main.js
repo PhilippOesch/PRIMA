@@ -57,19 +57,19 @@ var PongPaddle;
         //switch for diffrent Keyboard keys
         switch (_event.code) {
             case ƒ.KEYBOARD_CODE.ARROW_UP:
-                paddleRight.cmpTransform.local.translate(new ƒ.Vector3(0, 0.3, 0)); //Arrow-Up moves up the right paddle
+                paddleRight.cmpTransform.local.translate(new ƒ.Vector3(0, 0.3, 0)); //Arrow-Up moves up the right paddle by 0.3 units
                 break;
             case ƒ.KEYBOARD_CODE.ARROW_DOWN:
-                paddleRight.cmpTransform.local.translate(ƒ.Vector3.Y(-0.3)); //Arrow-Down moves down the right paddle
+                paddleRight.cmpTransform.local.translate(ƒ.Vector3.Y(-0.3)); //Arrow-Down moves down the right paddle by 0.3 units
                 break;
             case ƒ.KEYBOARD_CODE.W:
-                paddleLeft.cmpTransform.local.translate(new ƒ.Vector3(0, 0.3, 0)); //W moves up the right paddle
+                paddleLeft.cmpTransform.local.translate(new ƒ.Vector3(0, 0.3, 0)); //W moves up the right paddle by 0.3 units
                 break;
             case ƒ.KEYBOARD_CODE.S:
-                paddleLeft.cmpTransform.local.translate(ƒ.Vector3.Y(-0.3)); //S moves down the right paddle
+                paddleLeft.cmpTransform.local.translate(ƒ.Vector3.Y(-0.3)); //S moves down the right paddle by 0.3 units
                 break;
         }
-        //ƒ.RenderManager.update();
+        //ƒ.RenderManager.update(); //not working
         viewport.draw(); //update the viewport
     }
 })(PongPaddle || (PongPaddle = {}));
