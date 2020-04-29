@@ -7,6 +7,14 @@ var SnakeGame;
     let snakeScene = new ƒ.Node("SnakeScene");
     let snake = new ƒ.Node("Snake");
     snake.addComponent(new ƒ.ComponentTransform());
+    let Direction;
+    (function (Direction) {
+        Direction[Direction["Up"] = 1] = "Up";
+        Direction[Direction["Down"] = 2] = "Down";
+        Direction[Direction["Left"] = 3] = "Left";
+        Direction[Direction["Right"] = 4] = "Right";
+    })(Direction || (Direction = {})); //Enumiration for the different directions
+    let currentDirection; //current Snake Direction;
     let mesh;
     let mtrSolidWhite;
     let snakeList = new Array(); //array with snake parts
@@ -16,6 +24,7 @@ var SnakeGame;
         ƒ.Debug.log(canvas);
         mesh = new ƒ.MeshQuad();
         mtrSolidWhite = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
+        currentDirection = Direction.Right;
         //let node: ƒ.Node= new ƒ.Node("Quad"); //Node for our Object
         for (let i = 0; i < 4; i++) {
             let node = new ƒ.Node("Quad"); //Node for our Object
@@ -38,6 +47,7 @@ var SnakeGame;
         viewport = new ƒ.Viewport();
         viewport.initialize("Viewport", snakeScene, cmpCamera, canvas);
         ƒ.Debug.log(viewport);
+        document.addEventListener("keydown", hndKeydown);
         viewport.draw();
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_GAME, 10);
@@ -46,11 +56,24 @@ var SnakeGame;
         let snakeEnd = snakeList.pop(); //get last Snakepart and delete it from the Array
         let currentHeadPos = snakeList[0].mtxLocal.translation; //get the position of the head of the snake
         let newhead = createSnakePart(); // create a new snake part
-        newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x + 1, currentHeadPos.y, 0)); //put the snakepart in front of snake
+        switch (currentDirection) {
+            case 1:
+                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y + 1, 0));
+                break;
+            case 2:
+                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y - 1, 0));
+                break;
+            case 3:
+                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x - 1, currentHeadPos.y, 0));
+                break;
+            case 4:
+                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x + 1, currentHeadPos.y, 0));
+                break;
+        }
         snakeList.unshift(newhead); //add at the beginning of array
         snake.addChild(newhead); //add part to Scenegraph
         snake.removeChild(snakeEnd); //delet End from Scenegraph
-        snake.cmpTransform.local.translate(new ƒ.Vector3(1, 0, 0));
+        //snake.cmpTransform.local.translate(new ƒ.Vector3(1,0,0));
         viewport.draw();
     }
     function createSnakePart() {
@@ -62,6 +85,20 @@ var SnakeGame;
         node.addComponent(cmpMat); //Add Component into node component Map
         node.addComponent(new ƒ.ComponentTransform());
         return node;
+    }
+    function hndKeydown(_event) {
+        if (_event.code == ƒ.KEYBOARD_CODE.W && currentDirection != 2) {
+            currentDirection = 1;
+        }
+        if (_event.code == ƒ.KEYBOARD_CODE.S && currentDirection != 1) {
+            currentDirection = 2;
+        }
+        if (_event.code == ƒ.KEYBOARD_CODE.A && currentDirection != 4) {
+            currentDirection = 3;
+        }
+        if (_event.code == ƒ.KEYBOARD_CODE.D && currentDirection != 3) {
+            currentDirection = 4;
+        }
     }
 })(SnakeGame || (SnakeGame = {}));
 //# sourceMappingURL=main.js.map
