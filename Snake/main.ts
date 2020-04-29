@@ -15,7 +15,7 @@ namespace SnakeGame {
         Down = 2,
         Left = 3,
         Right = 4,
-    } //Enumiration for the different directions
+    } //Enumiration for the different directions. Assign Keyword to a value
 
     let currentDirection: Direction; //current Snake Direction;
 
@@ -78,24 +78,24 @@ namespace SnakeGame {
         let newhead: ƒ.Node = createSnakePart(); // create a new snake part
 
         switch (currentDirection) {
-            case 1:
+            case 1 /* Direction.Up */:
                 newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y + 1, 0));
                 break;
-            case 2:
+            case 2 /* Direction.Down */:
                 newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y - 1, 0));
                 break;
-            case 3:
+            case 3 /* Direction.Left */:
                 newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x - 1, currentHeadPos.y, 0));
                 break;
-            case 4:
+            case 4 /* Direction.Right */:
                 newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x + 1, currentHeadPos.y, 0));
                 break;
         }
 
-        snakeList.unshift(newhead); //add at the beginning of array
+        snakeList.unshift(newhead); //add part at the beginning of array
+        snake.addChild(newhead); //add new part to snakenode
 
-        snake.addChild(newhead); //add part to Scenegraph
-        snake.removeChild(snakeEnd); //delet End from Scenegraph
+        snake.removeChild(snakeEnd); //delete End part from snakenode
 
         //snake.cmpTransform.local.translate(new ƒ.Vector3(1,0,0));
         viewport.draw();
@@ -116,16 +116,17 @@ namespace SnakeGame {
     }
 
     function hndKeydown(_event: KeyboardEvent) {
-        if (_event.code == ƒ.KEYBOARD_CODE.W && currentDirection != 2) {
+        //the snake cant do a 180 Degree turn so we need to check wheather the snake is moving the opposite direction
+        if (_event.code == ƒ.KEYBOARD_CODE.W && currentDirection != 2 /* value for Direction.Down */) {
             currentDirection = 1;
         }
-        if (_event.code == ƒ.KEYBOARD_CODE.S && currentDirection != 1) {
+        if (_event.code == ƒ.KEYBOARD_CODE.S && currentDirection != 1 /* value for Direction.Up */) {
             currentDirection = 2;
         }
-        if (_event.code == ƒ.KEYBOARD_CODE.A && currentDirection != 4) {
+        if (_event.code == ƒ.KEYBOARD_CODE.A && currentDirection != 4 /* value for Direction.Right */) {
             currentDirection = 3;
         }
-        if (_event.code == ƒ.KEYBOARD_CODE.D && currentDirection != 3) {
+        if (_event.code == ƒ.KEYBOARD_CODE.D && currentDirection != 3 /* value for Direction.Left */) {
             currentDirection = 4;
         }
     }
