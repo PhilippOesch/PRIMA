@@ -5,40 +5,16 @@ var SnakeGame;
     window.addEventListener("load", hndload);
     let viewport; //viewport variable
     let snakeScene = new ƒ.Node("SnakeScene");
-    let snake = new ƒ.Node("Snake");
-    snake.addComponent(new ƒ.ComponentTransform());
-    let Direction;
-    (function (Direction) {
-        Direction[Direction["Up"] = 1] = "Up";
-        Direction[Direction["Down"] = 2] = "Down";
-        Direction[Direction["Left"] = 3] = "Left";
-        Direction[Direction["Right"] = 4] = "Right";
-    })(Direction || (Direction = {})); //Enumiration for the different directions. Assign Keyword to a value
-    let currentDirection; //current Snake Direction;
-    let mesh;
-    let mtrSolidWhite;
-    let snakeList = new Array(); //array with snake parts
+    let snake;
+    let wantedDir;
     function hndload(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.RenderManager.initialize();
         ƒ.Debug.log(canvas);
-        mesh = new ƒ.MeshQuad();
-        mtrSolidWhite = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
-        currentDirection = Direction.Right;
-        //let node: ƒ.Node= new ƒ.Node("Quad"); //Node for our Object
-        for (let i = 0; i < 4; i++) {
-            let node = new ƒ.Node("Quad"); //Node for our Object
-            let cmpMesh = new ƒ.ComponentMesh(mesh); //attache Mesh to Node
-            cmpMesh.pivot.scale(ƒ.Vector3.ONE(0.8));
-            node.addComponent(cmpMesh); //Add Component into node component Map
-            let cmpMat = new ƒ.ComponentMaterial(mtrSolidWhite); //attache Mesh to Node
-            node.addComponent(cmpMat); //Add Component into node component Map
-            node.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(-1 * i, 0, 0))));
-            // node.mtxLocal.scale(ƒ.Vector3.ONE(0.8));
-            snake.appendChild(node);
-            snakeList.push(node);
-        }
+        createWalls();
+        snake = new SnakeGame.Snake();
         snakeScene.addChild(snake);
+        spawnFood();
         //The Camera
         let cmpCamera = new ƒ.ComponentCamera();
         cmpCamera.pivot.translateZ(30);
@@ -50,56 +26,119 @@ var SnakeGame;
         document.addEventListener("keydown", hndKeydown);
         viewport.draw();
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
-        ƒ.Loop.start(ƒ.LOOP_MODE.TIME_GAME, 10);
+        ƒ.Loop.start(ƒ.LOOP_MODE.TIME_GAME, 5);
     }
     function update() {
-        let snakeEnd = snakeList.pop(); //get last Snakepart and delete it from the Array
-        let currentHeadPos = snakeList[0].mtxLocal.translation; //get the position of the head of the snake
-        let newhead = createSnakePart(); // create a new snake part
-        switch (currentDirection) {
-            case 1 /* Direction.Up */:
-                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y + 1, 0));
-                break;
-            case 2 /* Direction.Down */:
-                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x, currentHeadPos.y - 1, 0));
-                break;
-            case 3 /* Direction.Left */:
-                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x - 1, currentHeadPos.y, 0));
-                break;
-            case 4 /* Direction.Right */:
-                newhead.cmpTransform.local.translate(new ƒ.Vector3(currentHeadPos.x + 1, currentHeadPos.y, 0));
-                break;
+        if (wantedDir == 'up' && !snake.direction.equals(ƒ.Vector3.Y(-1))) {
+            snake.direction = ƒ.Vector3.Y();
         }
-        snakeList.unshift(newhead); //add part at the beginning of array
-        snake.addChild(newhead); //add new part to snakenode
-        snake.removeChild(snakeEnd); //delete End part from snakenode
-        //snake.cmpTransform.local.translate(new ƒ.Vector3(1,0,0));
+        else if (wantedDir == 'down' && !snake.direction.equals(ƒ.Vector3.Y())) {
+            snake.direction = ƒ.Vector3.Y(-1);
+        }
+        else if (wantedDir == 'left' && !snake.direction.equals(ƒ.Vector3.X())) {
+            snake.direction = ƒ.Vector3.X(-1);
+        }
+        else if (wantedDir == 'right' && !snake.direction.equals(ƒ.Vector3.X(-1))) {
+            snake.direction = ƒ.Vector3.X();
+        }
+        //check collision with the snake self
+        if (snake.snakeSegmentList.length >= 4) {
+            for (let i = 4; i < snake.snakeSegmentList.length; i++) {
+                let segment = snake.snakeSegmentList[i];
+                if (snake.isColliding(segment)) {
+                    console.log("Collision");
+                    gameover();
+                }
+            }
+        }
+        snake.move();
         viewport.draw();
     }
-    function createSnakePart() {
-        let node = new ƒ.Node("Quad");
-        let cmpMesh = new ƒ.ComponentMesh(mesh); //attache Mesh to Node
-        cmpMesh.pivot.scale(ƒ.Vector3.ONE(0.8));
-        node.addComponent(cmpMesh); //Add Component into node component Map
-        let cmpMat = new ƒ.ComponentMaterial(mtrSolidWhite); //attache Mesh to Node
-        node.addComponent(cmpMat); //Add Component into node component Map
-        node.addComponent(new ƒ.ComponentTransform());
-        return node;
-    }
     function hndKeydown(_event) {
-        //the snake cant do a 180 Degree turn so we need to check wheather the snake is moving the opposite direction
-        if (_event.code == ƒ.KEYBOARD_CODE.W && currentDirection != 2 /* value for Direction.Down */) {
-            currentDirection = 1;
+        switch (_event.code) {
+            case ƒ.KEYBOARD_CODE.W:
+                wantedDir = 'up';
+                break;
+            case ƒ.KEYBOARD_CODE.S:
+                wantedDir = 'down';
+                break;
+            case ƒ.KEYBOARD_CODE.A:
+                wantedDir = 'left';
+                break;
+            case ƒ.KEYBOARD_CODE.D:
+                wantedDir = 'right';
+                break;
         }
-        if (_event.code == ƒ.KEYBOARD_CODE.S && currentDirection != 1 /* value for Direction.Up */) {
-            currentDirection = 2;
+    }
+    function gameover() {
+        window.location.reload();
+    }
+    function createWalls() {
+        let mesh = new ƒ.MeshQuad();
+        let mtrSolidGrey = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("grey")));
+        //Top Wall
+        let topwall = new ƒ.Node("TopWall");
+        let cmpTopWallMesh = new ƒ.ComponentMesh(mesh);
+        cmpTopWallMesh.pivot.scale(new ƒ.Vector3(30, 2, 0));
+        topwall.addComponent(cmpTopWallMesh);
+        topwall.addComponent(new ƒ.ComponentMaterial(mtrSolidGrey));
+        topwall.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(0, 10.5, 0))));
+        //Bottom Wall
+        let bottomwall = new ƒ.Node("BottomWall");
+        let cmpBottomWallMesh = new ƒ.ComponentMesh(mesh);
+        cmpBottomWallMesh.pivot.scale(new ƒ.Vector3(30, 2, 0));
+        bottomwall.addComponent(cmpBottomWallMesh);
+        bottomwall.addComponent(new ƒ.ComponentMaterial(mtrSolidGrey));
+        bottomwall.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(0, -10.5, 0))));
+        //Left Wall
+        let leftwall = new ƒ.Node("LeftWall");
+        let cmpLeftWallMesh = new ƒ.ComponentMesh(mesh);
+        cmpLeftWallMesh.pivot.scale(new ƒ.Vector3(1, 22, 0));
+        leftwall.addComponent(cmpLeftWallMesh);
+        leftwall.addComponent(new ƒ.ComponentMaterial(mtrSolidGrey));
+        leftwall.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(-14, 0, 0))));
+        //Right Wall
+        let rightwall = new ƒ.Node("RightWall");
+        let cmpRightWallMesh = new ƒ.ComponentMesh(mesh);
+        cmpRightWallMesh.pivot.scale(new ƒ.Vector3(1, 22, 0));
+        rightwall.addComponent(cmpRightWallMesh);
+        rightwall.addComponent(new ƒ.ComponentMaterial(mtrSolidGrey));
+        rightwall.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(14, 0, 0))));
+        snakeScene.appendChild(rightwall);
+        snakeScene.appendChild(leftwall);
+        snakeScene.appendChild(topwall);
+        snakeScene.appendChild(bottomwall);
+    }
+    function spawnFood() {
+        let mesh = new ƒ.MeshQuad();
+        let mtrSolidRed = new ƒ.Material("SolidRed", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("red")));
+        let food = new ƒ.Node("Food");
+        let cmpFoodMesh = new ƒ.ComponentMesh(mesh);
+        food.addComponent(cmpFoodMesh);
+        food.addComponent(new ƒ.ComponentMaterial(mtrSolidRed));
+        let randomVector = getRandomVector();
+        let checkPos = false;
+        while (!checkPos) {
+            checkPos = true;
+            for (let position of snake.snakeSegmentList) {
+                if (position.cmpTransform.local.translation.equals(randomVector)) {
+                    checkPos = false;
+                }
+            }
+            if (!checkPos) {
+                randomVector = getRandomVector();
+            }
         }
-        if (_event.code == ƒ.KEYBOARD_CODE.A && currentDirection != 4 /* value for Direction.Right */) {
-            currentDirection = 3;
-        }
-        if (_event.code == ƒ.KEYBOARD_CODE.D && currentDirection != 3 /* value for Direction.Left */) {
-            currentDirection = 4;
-        }
+        console.log(randomVector);
+        food.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(randomVector)));
+        snakeScene.appendChild(food);
+    }
+    function getRandomVector() {
+        let randomX = Math.floor(Math.random() * 14) + 0;
+        randomX *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
+        let randomY = Math.floor(Math.random() * 10) + 0;
+        randomY *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
+        return new ƒ.Vector3(randomX, randomY, 0);
     }
 })(SnakeGame || (SnakeGame = {}));
 //# sourceMappingURL=main.js.map
