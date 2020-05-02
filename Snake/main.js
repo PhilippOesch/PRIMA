@@ -7,6 +7,7 @@ var SnakeGame;
     let snakeScene = new ƒ.Node("SnakeScene");
     let snake;
     let wantedDir;
+    let food;
     function hndload(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.RenderManager.initialize();
@@ -50,6 +51,12 @@ var SnakeGame;
                     gameover();
                 }
             }
+        }
+        //check collision with food
+        if (snake.isColliding(food)) {
+            snakeScene.removeChild(food);
+            spawnFood();
+            snake.addNewSnakePart();
         }
         snake.move();
         viewport.draw();
@@ -112,31 +119,30 @@ var SnakeGame;
     function spawnFood() {
         let mesh = new ƒ.MeshQuad();
         let mtrSolidRed = new ƒ.Material("SolidRed", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("red")));
-        let food = new ƒ.Node("Food");
+        food = new ƒ.Node("Food");
         let cmpFoodMesh = new ƒ.ComponentMesh(mesh);
         food.addComponent(cmpFoodMesh);
         food.addComponent(new ƒ.ComponentMaterial(mtrSolidRed));
-        let randomVector = getRandomVector();
-        let checkPos = false;
-        while (!checkPos) {
+        let randomVector;
+        let checkPos;
+        do {
             checkPos = true;
-            for (let position of snake.snakeSegmentList) {
-                if (position.cmpTransform.local.translation.equals(randomVector)) {
+            randomVector = getRandomVector();
+            for (let snakesegment of snake.snakeSegmentList) {
+                if (snakesegment.cmpTransform.local.translation.equals(randomVector)) {
                     checkPos = false;
+                    return;
                 }
             }
-            if (!checkPos) {
-                randomVector = getRandomVector();
-            }
-        }
+        } while (!checkPos);
         console.log(randomVector);
         food.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(randomVector)));
         snakeScene.appendChild(food);
     }
     function getRandomVector() {
-        let randomX = Math.floor(Math.random() * 14) + 0;
+        let randomX = Math.floor(Math.random() * 13) + 0;
         randomX *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
-        let randomY = Math.floor(Math.random() * 10) + 0;
+        let randomY = Math.floor(Math.random() * 9) + 0;
         randomY *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
         return new ƒ.Vector3(randomX, randomY, 0);
     }

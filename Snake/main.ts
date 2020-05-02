@@ -10,6 +10,8 @@ namespace SnakeGame {
     let snake: Snake;
     let wantedDir: string;
 
+    let food: ƒ.Node; 
+
     function hndload(_event: Event): void {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
 
@@ -61,6 +63,13 @@ namespace SnakeGame {
                     gameover();
                 }
             }
+        }
+
+        //check collision with food
+        if(snake.isColliding(food)){
+            snakeScene.removeChild(food);
+            spawnFood();
+            snake.addNewSnakePart();
         }
 
         snake.move()
@@ -135,27 +144,26 @@ namespace SnakeGame {
         let mesh: ƒ.Mesh = new ƒ.MeshQuad();
         let mtrSolidRed: ƒ.Material = new ƒ.Material("SolidRed", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("red")));
 
-        let food: ƒ.Node= new ƒ.Node("Food");
+        food= new ƒ.Node("Food");
 
         let cmpFoodMesh: ƒ.ComponentMesh = new ƒ.ComponentMesh(mesh);
         
         food.addComponent(cmpFoodMesh);
         food.addComponent(new ƒ.ComponentMaterial(mtrSolidRed));
 
-        let randomVector: ƒ.Vector3= getRandomVector();
-        let checkPos: boolean= false;
-        while(!checkPos){
-            checkPos= true
-            for(let position of snake.snakeSegmentList){
-                if(position.cmpTransform.local.translation.equals(randomVector)){
+        let randomVector: ƒ.Vector3;
+        let checkPos: Boolean;
+
+        do {
+            checkPos= true;
+            randomVector= getRandomVector();
+            for(let snakesegment of snake.snakeSegmentList){
+                if(snakesegment.cmpTransform.local.translation.equals(randomVector)){
                     checkPos= false;
+                    return;
                 }
             }
-
-            if(!checkPos){
-                randomVector= getRandomVector();
-            }
-        }
+        } while(!checkPos);
 
         console.log(randomVector);
         food.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(randomVector)))
@@ -164,10 +172,10 @@ namespace SnakeGame {
     }
 
     function getRandomVector(): ƒ.Vector3{
-        let randomX= Math.floor(Math.random()*14) + 0;
+        let randomX= Math.floor(Math.random()*13) + 0;
         randomX *= Math.floor(Math.random()*2) == 1 ? 1 : -1; 
 
-        let randomY= Math.floor(Math.random()*10) + 0;
+        let randomY= Math.floor(Math.random()*9) + 0;
         randomY *= Math.floor(Math.random()*2) == 1 ? 1 : -1; 
 
         return new ƒ.Vector3(randomX, randomY, 0);

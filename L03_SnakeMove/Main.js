@@ -9,7 +9,7 @@ var L03_SnakeMove;
         ƒ.Debug.log(canvas);
         snake = new L03_SnakeMove.Snake();
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translateZ(30);
+        cmpCamera.pivot.translateZ(10);
         cmpCamera.pivot.rotateY(180);
         L03_SnakeMove.viewport = new ƒ.Viewport();
         L03_SnakeMove.viewport.initialize("Viewport", snake, cmpCamera, canvas);

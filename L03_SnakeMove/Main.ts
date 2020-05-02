@@ -12,7 +12,7 @@ namespace L03_SnakeMove {
     snake = new Snake();
 
     let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-    cmpCamera.pivot.translateZ(30);
+    cmpCamera.pivot.translateZ(10);
     cmpCamera.pivot.rotateY(180);
 
     viewport = new ƒ.Viewport();

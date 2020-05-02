@@ -8,7 +8,7 @@ namespace SnakeGame {
         constructor() {
             super("Snake");
             this.snakeSegmentList = new Array<ƒ.Node>();
-            this.create(12);
+            this.create(1);
         }
 
         create(_segments: number): void {
@@ -32,20 +32,20 @@ namespace SnakeGame {
             }
         }
 
-        move() {
-            let snakeEnd: ƒ.Node = this.snakeSegmentList.pop(); //get last Snakepart and delete it from the Array
+        move() : void {
             let newhead: ƒ.Node = this.createSnakePart(); // create a new snake part
 
-            let currentHeadPos = this.snakeSegmentList[0].mtxLocal.translation; //get the position of the head of the snake
+            let currentHeadPos = this.snakeSegmentList[0].cmpTransform.local.translation; //get the position of the head of the snake
+            let snakeEnd: ƒ.Node = this.snakeSegmentList.pop(); //get last Snakepart and delete it from the Array
 
-            if((currentHeadPos.x+ this.direction.x)>14){
-                currentHeadPos= new ƒ.Vector3(-14, currentHeadPos.y, 0);
-            } else if((currentHeadPos.x+ this.direction.x)<-14){
-                currentHeadPos= new ƒ.Vector3(14, currentHeadPos.y, 0);
-            } else if((currentHeadPos.y+ this.direction.y)>10){
-                currentHeadPos= new ƒ.Vector3(currentHeadPos.x, -10, 0);
-            } else if((currentHeadPos.y+ this.direction.y)<-10){
-                currentHeadPos= new ƒ.Vector3(currentHeadPos.x, 10, 0);
+            if((currentHeadPos.x+ this.direction.x)>13){
+                currentHeadPos= new ƒ.Vector3(-13, currentHeadPos.y, 0);
+            } else if((currentHeadPos.x+ this.direction.x)<-13){
+                currentHeadPos= new ƒ.Vector3(13, currentHeadPos.y, 0);
+            } else if((currentHeadPos.y+ this.direction.y)>9){
+                currentHeadPos= new ƒ.Vector3(currentHeadPos.x, -9, 0);
+            } else if((currentHeadPos.y+ this.direction.y)<-9){
+                currentHeadPos= new ƒ.Vector3(currentHeadPos.x, 9, 0);
             } else {
                 currentHeadPos.add(this.direction)
             }
@@ -72,7 +72,7 @@ namespace SnakeGame {
             return rect1.collides(rect2);
         }
 
-        createSnakePart(){
+        createSnakePart(): ƒ.Node{
             let mesh = new ƒ.MeshQuad();
             let mtrSolidGreen = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("green")));
 
@@ -87,6 +87,12 @@ namespace SnakeGame {
     
             node.addComponent(new ƒ.ComponentTransform());
             return node;
+        }
+
+        addNewSnakePart(): void{
+            let newpart: ƒ.Node= this.createSnakePart();
+            this.snakeSegmentList.push(newpart);
+            this.appendChild(newpart);
         }
     }
 }

@@ -7,7 +7,7 @@ var SnakeGame;
             super("Snake");
             this.direction = ƒ.Vector3.X();
             this.snakeSegmentList = new Array();
-            this.create(12);
+            this.create(1);
         }
         create(_segments) {
             let mesh = new ƒ.MeshQuad();
@@ -26,20 +26,20 @@ var SnakeGame;
             }
         }
         move() {
-            let snakeEnd = this.snakeSegmentList.pop(); //get last Snakepart and delete it from the Array
             let newhead = this.createSnakePart(); // create a new snake part
-            let currentHeadPos = this.snakeSegmentList[0].mtxLocal.translation; //get the position of the head of the snake
-            if ((currentHeadPos.x + this.direction.x) > 14) {
-                currentHeadPos = new ƒ.Vector3(-14, currentHeadPos.y, 0);
+            let currentHeadPos = this.snakeSegmentList[0].cmpTransform.local.translation; //get the position of the head of the snake
+            let snakeEnd = this.snakeSegmentList.pop(); //get last Snakepart and delete it from the Array
+            if ((currentHeadPos.x + this.direction.x) > 13) {
+                currentHeadPos = new ƒ.Vector3(-13, currentHeadPos.y, 0);
             }
-            else if ((currentHeadPos.x + this.direction.x) < -14) {
-                currentHeadPos = new ƒ.Vector3(14, currentHeadPos.y, 0);
+            else if ((currentHeadPos.x + this.direction.x) < -13) {
+                currentHeadPos = new ƒ.Vector3(13, currentHeadPos.y, 0);
             }
-            else if ((currentHeadPos.y + this.direction.y) > 10) {
-                currentHeadPos = new ƒ.Vector3(currentHeadPos.x, -10, 0);
+            else if ((currentHeadPos.y + this.direction.y) > 9) {
+                currentHeadPos = new ƒ.Vector3(currentHeadPos.x, -9, 0);
             }
-            else if ((currentHeadPos.y + this.direction.y) < -10) {
-                currentHeadPos = new ƒ.Vector3(currentHeadPos.x, 10, 0);
+            else if ((currentHeadPos.y + this.direction.y) < -9) {
+                currentHeadPos = new ƒ.Vector3(currentHeadPos.x, 9, 0);
             }
             else {
                 currentHeadPos.add(this.direction);
@@ -71,6 +71,11 @@ var SnakeGame;
             node.addComponent(cmpMat); //Add Component into node component Map
             node.addComponent(new ƒ.ComponentTransform());
             return node;
+        }
+        addNewSnakePart() {
+            let newpart = this.createSnakePart();
+            this.snakeSegmentList.push(newpart);
+            this.appendChild(newpart);
         }
     }
     SnakeGame.Snake = Snake;

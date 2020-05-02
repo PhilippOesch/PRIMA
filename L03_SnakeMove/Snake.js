@@ -10,14 +10,9 @@ var L03_SnakeMove;
             this.createSegement(4);
         }
         move() {
-            let childArray = new Array();
-            childArray = this.getChildren();
-            let child = childArray[0];
-            console.log(child);
-            let cmpPrev = child.cmpTransform; // child.cmpTransform;
-            let mtxHead = ƒ.Matrix4x4.IDENTITY();
-            mtxHead.set(cmpPrev.local);
-            // Maybe problem using reference
+            let child = this.getChildren()[0];
+            let cmpPrev = child.getComponent(ƒ.ComponentTransform); // child.cmpTransform;
+            let mtxHead = cmpPrev.local.copy;
             mtxHead.translate(this.direction);
             let cmpNew = new ƒ.ComponentTransform(mtxHead);
             for (let segment of this.getChildren()) {

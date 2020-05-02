@@ -11,14 +11,9 @@ namespace L03_SnakeMove {
     }
     
     public move(): void {
-      let childArray: Array<ƒ.Node>= new Array();
-      childArray= this.getChildren();
-      let child: ƒ.Node= childArray[0];
-      console.log(child);
-      let cmpPrev: ƒ.ComponentTransform = child.cmpTransform;  // child.cmpTransform;
-      let mtxHead: ƒ.Matrix4x4 = ƒ.Matrix4x4.IDENTITY();
-      mtxHead.set(cmpPrev.local);
-      // Maybe problem using reference
+      let child: ƒ.Node = this.getChildren()[0];
+      let cmpPrev: ƒ.ComponentTransform = child.getComponent(ƒ.ComponentTransform);  // child.cmpTransform;
+      let mtxHead: ƒ.Matrix4x4 = cmpPrev.local.copy;
       mtxHead.translate(this.direction);
       let cmpNew: ƒ.ComponentTransform = new ƒ.ComponentTransform(mtxHead);
 
