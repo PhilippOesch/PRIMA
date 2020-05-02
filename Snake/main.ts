@@ -165,7 +165,6 @@ namespace SnakeGame {
             }
         } while(!checkPos);
 
-        console.log(randomVector);
         food.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(randomVector)))
 
         snakeScene.appendChild(food);
