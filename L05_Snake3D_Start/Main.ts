@@ -5,8 +5,8 @@ namespace L05_Snake3DStart {
   export let viewport: ƒ.Viewport;
   let scene: ƒ.Node;
   let snake: Snake;
-  let playfield: ƒ.Node;
-  let twoDPos: ƒ.Vector2;
+  let playfield: ƒ.Node; 
+  let twoDPos: ƒ.Vector2; //position on current plain
 
 
   function hndLoad(_event: Event): void {
