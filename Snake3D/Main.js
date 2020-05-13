@@ -18,7 +18,7 @@ var L05_Snake3DStart;
         playfield.cmpTransform.local.translateY(-2);
         playfield.appendChild(snake);
         cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translateZ(30);
+        cmpCamera.pivot.translate(new ƒ.Vector3(5, 10, 40));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         L05_Snake3DStart.viewport = new ƒ.Viewport();
         L05_Snake3DStart.viewport.initialize("Viewport", scene, cmpCamera, canvas);
@@ -32,31 +32,35 @@ var L05_Snake3DStart;
     function update(_event) {
         L05_Snake3DStart.viewport.draw();
         moveCamera();
-        checkForBoarder();
         collisionDetection();
         snake.move();
     }
     function control(_event) {
-        let direction;
-        direction = ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.W]);
-        direction.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(-1), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.S]));
-        if (direction.y == 0) {
-            direction = ƒ.Keyboard.mapToValue(ƒ.Vector3.X(), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.D]);
-            direction.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.X(-1), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.A]));
-        }
-        if (!direction.equals(ƒ.Vector3.ZERO()))
-            snake.direction = direction;
-        //prevent snake from changing direction when hitting a boarder
-        if (snake.plainPos2d.x == 5.5 || snake.plainPos2d.x == -5.5 || snake.plainPos2d.y == 5.5 || snake.plainPos2d.y == -5.5) {
-            return;
-        }
+        // let direction: ƒ.Vector3;
+        // direction = ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.W]);
+        // direction.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(-1), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.S]));
+        // if (direction.y == 0) {
+        //   direction = ƒ.Keyboard.mapToValue(ƒ.Vector3.X(), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.D]);
+        //   direction.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.X(-1), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.A]));
+        // }
+        // if (!direction.equals(ƒ.Vector3.ZERO()))
+        //   snake.direction = direction;
         let rotation = ƒ.Vector3.ZERO();
-        rotation = ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(90), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.ARROW_RIGHT]);
-        rotation.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.Y(-90), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.ARROW_LEFT]));
-        rotation.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.X(90), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.ARROW_DOWN]));
-        rotation.add(ƒ.Keyboard.mapToValue(ƒ.Vector3.X(-90), ƒ.Vector3.ZERO(), [ƒ.KEYBOARD_CODE.ARROW_UP]));
+        switch (_event.code) {
+            case ƒ.KEYBOARD_CODE.ARROW_RIGHT:
+                rotation = ƒ.Vector3.Y(-90);
+                break;
+            case ƒ.KEYBOARD_CODE.ARROW_LEFT:
+                rotation = ƒ.Vector3.Y(90);
+                break;
+            case ƒ.KEYBOARD_CODE.SPACE:
+                rotation = ƒ.Vector3.Z(-90);
+                break;
+            default:
+                return;
+        }
         snake.rotate(rotation);
-        playfield.cmpTransform.local.rotate(rotation);
+        // cosys.mtxLocal.rotate(rotation);
     }
     function createSpielfeld() {
         let mesh = new ƒ.MeshCube();
@@ -86,24 +90,6 @@ var L05_Snake3DStart;
                 console.log("Collision");
                 gameover();
             }
-        }
-    }
-    function checkForBoarder() {
-        if (snake.plainPos2d.x == 5.5) {
-            snake.rotate(ƒ.Vector3.Y(90));
-            snake.setplainPosX = -5.5;
-        }
-        else if (snake.plainPos2d.x == -5.5) {
-            snake.rotate(ƒ.Vector3.Y(-90));
-            snake.setplainPosX = 5.5;
-        }
-        else if (snake.plainPos2d.y == -5.5) {
-            snake.rotate(ƒ.Vector3.X(90));
-            snake.setplainPosY = 5.5;
-        }
-        else if (snake.plainPos2d.y == 5.5) {
-            snake.rotate(ƒ.Vector3.X(-90));
-            snake.setplainPosY = -5.5;
         }
     }
 })(L05_Snake3DStart || (L05_Snake3DStart = {}));

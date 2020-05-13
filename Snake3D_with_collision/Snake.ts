@@ -1,19 +1,21 @@
-namespace L05_Snake3DStart {
+namespace L06_Snake3D_HeadControl {
   import ƒ = FudgeCore;
+  import ƒAid = FudgeAid;
 
   export class Snake extends ƒ.Node {
+    public head: ƒ.Node;
     private dirCurrent: ƒ.Vector3 = ƒ.Vector3.X();
     private dirNew: ƒ.Vector3;
 
     constructor() {
       super("Snake");
       console.log("Creating Snake");
-      this.createSegement(4);
+      this.createSegement(2);
     }
 
     public move(): void {
       this.dirCurrent = this.dirNew || this.dirCurrent;
-      let child: ƒ.Node = this.getChildren()[0];
+      let child: ƒ.Node = this.head;
       let cmpPrev: ƒ.ComponentTransform = child.getComponent(ƒ.ComponentTransform); 
       let mtxHead: ƒ.Matrix4x4;
       while (true) {
@@ -36,19 +38,18 @@ namespace L05_Snake3DStart {
 
     public set direction(_new: ƒ.Vector3) {
       if (this.dirCurrent.equals(ƒ.Vector3.SCALE(_new, -1)))
-      return;
-      //console.log(this.dirCurrent, _new);
+        return;
+      console.log(this.dirCurrent, _new);
       this.dirNew = _new;
     }
-    
+
     public rotate(_rotation: ƒ.Vector3): void {
-      let head: ƒ.Node = this.getChildren()[0];
-      head.mtxLocal.rotate(_rotation);
+      this.head.mtxLocal.rotate(_rotation);
     }
 
     private createSegement(_segments: number): void {
       let mesh: ƒ.MeshCube = new ƒ.MeshCube();
-      let mtrSolidGreen: ƒ.Material = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
+      let mtrSolidWhite: ƒ.Material = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
 
       for (let i: number = 0; i < _segments; i++) {
         let segment: ƒ.Node = new ƒ.Node("Segment");
@@ -57,13 +58,19 @@ namespace L05_Snake3DStart {
         segment.addComponent(cmpMesh);
         cmpMesh.pivot.scale(ƒ.Vector3.ONE(0.8));
 
-        let cmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidGreen);
+        let cmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidWhite);
         segment.addComponent(cmpMaterial);
+        cmpMaterial.clrPrimary = ƒ.Color.CSS("yellow");
 
         segment.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(-1 * i, 0, 0))));
 
         this.appendChild(segment);
       }
+
+      this.head = this.getChildren()[0];
+      let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
+      cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(5))));
+      this.head.addChild(cosys);
     }
 
     public isColliding(_inputObject: ƒ.Node): boolean{
@@ -79,11 +86,36 @@ namespace L05_Snake3DStart {
 
       let distance= Math.sqrt((xval* xval)+ (yval* yval)+ (zval* zval));
       
-      if(distance<= (snakeHeadScale.x+ inputScale.x)){
+      if(distance< (snakeHeadScale.x/2+ inputScale.x/2)){
         return true
       } else {
         return false
       }
     }
+
+    createSnakePart(): ƒ.Node{
+      let snakeLength= this.getChildren().length
+      let lastSegmentPos= this.getChildren()[snakeLength-1].cmpTransform.local.translation.copy
+
+      let mesh = new ƒ.MeshCube();
+      let mtrSolidGreen = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("yellow")));
+
+      let node: ƒ.Node = new ƒ.Node("Snakepart");
+
+      let cmpMesh: ƒ.ComponentMesh = new ƒ.ComponentMesh(mesh); //attache Mesh to Node
+      cmpMesh.pivot.scale(ƒ.Vector3.ONE(0.8));
+      node.addComponent(cmpMesh); //Add Component into node component Map
+
+      let cmpMat: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidGreen); //attache Mesh to Node
+      node.addComponent(cmpMat); //Add Component into node component Map
+
+      node.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(lastSegmentPos.x-1, lastSegmentPos.y, lastSegmentPos.z))));
+      return node;
+  }
+
+  addNewSnakePart(): void{
+      let newpart: ƒ.Node= this.createSnakePart();
+      this.appendChild(newpart);
+  }
   }
 }

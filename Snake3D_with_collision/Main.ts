@@ -1,39 +1,42 @@
-namespace L05_Snake3DStart {
+namespace L06_Snake3D_HeadControl {
   import ƒ = FudgeCore;
+  import ƒAid = FudgeAid;
 
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
-  let scene: ƒ.Node;
   let snake: Snake;
-  let playfield: ƒ.Node;
-  let cmpCamera: ƒ.ComponentCamera;
+  let graph: ƒ.Node;
+  let food: ƒ.Node;
+  let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
+  ƒ.RenderManager.initialize(true);
 
 
   function hndLoad(_event: Event): void {
     const canvas: HTMLCanvasElement = document.querySelector("canvas");
     ƒ.Debug.log(canvas);
 
-    scene = new ƒ.Node("scene");
-    playfield = createSpielfeld();
-    scene.appendChild(playfield)
+    graph= new ƒ.Node("Game");
     snake = new Snake();
+    graph.addChild(snake);
+    createNewFood();
+    cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
+    // graph.addChild(cosys);
 
+    let cube: ƒAid.Node = new ƒAid.Node(
+      "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(9)),
+      new ƒ.Material("Cube", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("GREEN"))),
+      new ƒ.MeshCube()
+    );
+    graph.addChild(cube);
 
-    playfield.cmpTransform.local.rotateY(20);
-    playfield.cmpTransform.local.translateY(-2);
-    playfield.appendChild(snake);
-
-    cmpCamera= new ƒ.ComponentCamera();
+    let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
     cmpCamera.pivot.translate(new ƒ.Vector3(5, 10, 40));
     cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
-
+    // cmpCamera.pivot.rotateY(180);
 
     viewport = new ƒ.Viewport();
-    viewport.initialize("Viewport", scene, cmpCamera, canvas);
+    viewport.initialize("Viewport", graph, cmpCamera, canvas);
     ƒ.Debug.log(viewport);
-
-    // let axisVertical = new ƒ.Axis("Vertical", 1, ƒ.CONTROL_TYPE.PROPORTIONAL, true);
-    // axisVertical.addControl(new ƒ.Control())
 
     document.addEventListener("keydown", control);
 
@@ -42,11 +45,19 @@ namespace L05_Snake3DStart {
   }
 
   function update(_event: ƒ.Eventƒ): void {
-    viewport.draw();
-    moveCamera();
     collisionDetection();
     snake.move();
+    moveCamera();
+    viewport.draw();
   }
+
+  function moveCamera(): void {
+    let posCamera: ƒ.Vector3 = snake.head.mtxLocal.translation;
+    posCamera.normalize(30);
+    viewport.camera.pivot.translation = posCamera;
+    viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
+  }
+
 
   function control(_event: KeyboardEvent): void {
     // let direction: ƒ.Vector3;
@@ -67,7 +78,13 @@ namespace L05_Snake3DStart {
       case ƒ.KEYBOARD_CODE.ARROW_RIGHT:
         rotation = ƒ.Vector3.Y(-90);
         break;
+      case ƒ.KEYBOARD_CODE.D:
+        rotation = ƒ.Vector3.Y(-90);
+        break;
       case ƒ.KEYBOARD_CODE.ARROW_LEFT:
+        rotation = ƒ.Vector3.Y(90);
+        break;
+      case ƒ.KEYBOARD_CODE.A:
         rotation = ƒ.Vector3.Y(90);
         break;
       case ƒ.KEYBOARD_CODE.SPACE:
@@ -81,34 +98,6 @@ namespace L05_Snake3DStart {
     // cosys.mtxLocal.rotate(rotation);
   }
 
-  function createSpielfeld() {
-    let mesh: ƒ.MeshCube = new ƒ.MeshCube();
-    let mtrSolidGrey: ƒ.Material = new ƒ.Material("SolidGrey", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("GREY")));
-
-    let feld: ƒ.Node = new ƒ.Node("Spielfeld");
-
-    let cmpMesh: ƒ.ComponentMesh = new ƒ.ComponentMesh(mesh);
-    cmpMesh.pivot.scale(new ƒ.Vector3(10, 10, 10))
-    let cmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidGrey);
-    let cmpTransform: ƒ.ComponentTransform = new ƒ.ComponentTransform()
-
-    feld.addComponent(cmpMesh);
-    feld.addComponent(cmpMaterial)
-    feld.addComponent(cmpTransform);
-
-    return feld;
-  }
-
-  function gameover(): void {
-    window.location.reload();
-  }
-
-  function moveCamera(): void {
-    let posCamera: ƒ.Vector3 = ƒ.Vector3.NORMALIZATION(snake.getChildren()[0].mtxLocal.translation, 30);
-    viewport.camera.pivot.translation = posCamera;
-    viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
-  }
-
   function collisionDetection(): void {
     for (let i = 3; i < snake.getChildren().length; i++) {
       let segment = snake.getChildren()[i];
@@ -117,5 +106,36 @@ namespace L05_Snake3DStart {
         gameover();
       }
     }
+
+    if(snake.isColliding(food)){
+      graph.removeChild(food);
+      createNewFood();
+      snake.addNewSnakePart();
+    }
   }
+
+  function gameover(): void {
+    //window.location.reload();
+    ƒ.Loop.stop();
+  }
+
+  function createNewFood(): void {
+    let newFood: Food;
+
+    let checkCollision: Boolean;
+    do{
+        checkCollision= true;
+        newFood= new Food()
+        for(let snakeSegments of snake.getChildren()){
+            if(newFood.isColliding(snakeSegments)){
+                checkCollision= false;
+                return;
+            }
+        }
+    } while(!checkCollision);
+ 
+    food= newFood;
+    graph.appendChild(food);
+}
+
 }

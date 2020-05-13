@@ -350,9 +350,9 @@ declare namespace FudgeCore {
 declare namespace FudgeCore {
     class RenderInjectorCoat extends RenderInjector {
         static decorate(_constructor: Function): void;
-        protected static injectCoatColored(this: Coat, _shader: typeof Shader): void;
-        protected static injectCoatTextured(this: Coat, _shader: typeof Shader): void;
-        protected static injectCoatMatCap(this: Coat, _shader: typeof Shader): void;
+        protected static injectCoatColored(this: Coat, _shader: typeof Shader, _cmpMaterial: ComponentMaterial): void;
+        protected static injectCoatTextured(this: Coat, _shader: typeof Shader, _cmpMaterial: ComponentMaterial): void;
+        protected static injectCoatMatCap(this: Coat, _shader: typeof Shader, _cmpMaterial: ComponentMaterial): void;
     }
 }
 declare namespace FudgeCore {
@@ -684,7 +684,7 @@ declare namespace FudgeCore {
         /**
          * Draw a mesh buffer using the given infos and the complete projection matrix
          */
-        protected static draw(_shader: typeof Shader, _mesh: Mesh, _coat: Coat, _final: Matrix4x4, _projection: Matrix4x4): void;
+        protected static draw(_mesh: Mesh, cmpMaterial: ComponentMaterial, _final: Matrix4x4, _projection: Matrix4x4): void;
     }
 }
 declare namespace FudgeCore {
@@ -984,7 +984,7 @@ declare namespace FudgeCore {
 }
 declare namespace FudgeCore {
     /**
-     * Extends the standard AudioContext for integration with [[Node]]-branches.
+     * Extends the standard AudioContext for integration with FUDGE-graphs.
      * Creates a default object at startup to be addressed as AudioManager default.
      * Other objects of this class may be create for special purposes.
      */
@@ -993,7 +993,7 @@ declare namespace FudgeCore {
         static readonly default: AudioManager;
         /** The master volume all AudioNodes in the context should attach to */
         readonly gain: GainNode;
-        private branch;
+        private graph;
         private cmpListener;
         constructor(contextOptions?: AudioContextOptions);
         /**
@@ -1005,19 +1005,19 @@ declare namespace FudgeCore {
          */
         get volume(): number;
         /**
-         * Determines branch to listen to. Each [[ComponentAudio]] in the branch will connect to this contexts master gain, all others disconnect.
+         * Determines FUDGE-graph to listen to. Each [[ComponentAudio]] in the graph will connect to this contexts master gain, all others disconnect.
          */
-        listenTo: (_branch: Node) => void;
+        listenTo: (_graph: Node) => void;
         /**
-         * Retrieve the branch currently listening to
+         * Retrieve the FUDGE-graph currently listening to
          */
-        getBranchListeningTo: () => Node;
+        getGraphListeningTo: () => Node;
         /**
          * Set the [[ComponentAudioListener]] that serves the spatial location and orientation for this contexts listener
          */
         listen: (_cmpListener: ComponentAudioListener) => void;
         /**
-         * Updates the spatial settings of the AudioNodes effected in the current branch
+         * Updates the spatial settings of the AudioNodes effected in the current FUDGE-graph
          */
         update: () => void;
     }
@@ -1034,7 +1034,7 @@ declare namespace FudgeCore {
             [key: string]: unknown;
         };
         mutate(_mutator: Mutator): void;
-        useRenderData(_shader: typeof Shader): void;
+        useRenderData(_shader: typeof Shader, _cmpMaterial: ComponentMaterial): void;
         serialize(): Serialization;
         deserialize(_serialization: Serialization): Serializable;
         protected reduceMutator(): void;
@@ -1047,14 +1047,13 @@ declare namespace FudgeCore {
         constructor(_color?: Color);
     }
     /**
-     * A [[Coat]] to be used by the MatCap Shader providing a texture, a tint color (0.5 grey is neutral)
-     * and a flatMix number for mixing between smooth and flat shading.
+     * A [[Coat]] to be used by the MatCap Shader providing a texture, a tint color (0.5 grey is neutral). Set shadeSmooth to 1 for smooth shading.
      */
     class CoatMatCap extends Coat {
         texture: TextureImage;
         tintColor: Color;
-        flatMix: number;
-        constructor(_texture?: TextureImage, _tintcolor?: Color, _flatmix?: number);
+        shadeSmooth: number;
+        constructor(_texture?: TextureImage, _tintcolor?: Color, _shadeSmooth?: number);
     }
 }
 declare namespace FudgeCore {
@@ -1289,9 +1288,9 @@ declare namespace FudgeCore {
          */
         private handleAttach;
         /**
-         * Automatically connects/disconnects AudioNodes when appending/removing the branch the component is in.
+         * Automatically connects/disconnects AudioNodes when appending/removing the FUDGE-graph the component is in.
          */
-        private handleBranch;
+        private handleGraph;
         /**
          * Updates the panner node, its position and direction, using the worldmatrix of the container and the pivot of this component.
          */
@@ -1404,6 +1403,8 @@ declare namespace FudgeCore {
     class ComponentMaterial extends Component {
         static readonly iSubclass: number;
         material: Material;
+        clrPrimary: Color;
+        clrSecondary: Color;
         constructor(_material?: Material);
         serialize(): Serialization;
         deserialize(_serialization: Serialization): Serializable;
@@ -1644,6 +1645,8 @@ declare namespace FudgeCore {
         getArrayBytesRGBA(): Uint8ClampedArray;
         add(_color: Color): void;
         getCSS(): string;
+        getHex(): string;
+        setHex(_hex: string): void;
         protected reduceMutator(_mutator: Mutator): void;
     }
 }
@@ -1726,7 +1729,7 @@ declare namespace FudgeCore {
          */
         static get(_idResource: string): SerializableResource;
         /**
-         * Creates and registers a resource from a [[Node]], copying the complete branch starting with it
+         * Creates and registers a resource from a [[Node]], copying the complete graph starting with it
          * @param _node A node to create the resource from
          * @param _replaceWithInstance if true (default), the node used as origin is replaced by a [[NodeResourceInstance]] of the [[NodeResource]] created
          */
@@ -1745,7 +1748,7 @@ declare namespace FudgeCore {
 }
 declare namespace FudgeCore {
     /**
-     * Controls the rendering of a branch of a scenetree, using the given [[ComponentCamera]],
+     * Controls the rendering of a graph, using the given [[ComponentCamera]],
      * and the propagation of the rendered image from the offscreen renderbuffer to the target canvas
      * through a series of [[Framing]] objects. The stages involved are in order of rendering
      * [[RenderManager]].viewport -> [[Viewport]].source -> [[Viewport]].destination -> DOM-Canvas -> Client(CSS)
@@ -1763,18 +1766,14 @@ declare namespace FudgeCore {
         frameSourceToRender: FramingScaled;
         adjustingFrames: boolean;
         adjustingCamera: boolean;
-        private branch;
+        private graph;
         private crc2;
         private canvas;
         private pickBuffers;
         /**
-         * Connects the viewport to the given canvas to render the given branch to using the given camera-component, and names the viewport as given.
-         * @param _name
-         * @param _branch
-         * @param _camera
-         * @param _canvas
+         * Connects the viewport to the given canvas to render the given graph to using the given camera-component, and names the viewport as given.
          */
-        initialize(_name: string, _branch: Node, _camera: ComponentCamera, _canvas: HTMLCanvasElement): void;
+        initialize(_name: string, _graph: Node, _camera: ComponentCamera, _canvas: HTMLCanvasElement): void;
         /**
          * Retrieve the 2D-context attached to the destination canvas
          */
@@ -1788,9 +1787,9 @@ declare namespace FudgeCore {
          */
         getClientRectangle(): Rectangle;
         /**
-         * Set the branch to be drawn in the viewport.
+         * Set the graph to be drawn in the viewport.
          */
-        setBranch(_branch: Node): void;
+        setGraph(_graph: Node): void;
         /**
          * Logs this viewports scenegraph to the console.
          */
@@ -1908,12 +1907,12 @@ declare namespace FudgeCore {
 }
 declare namespace FudgeCore {
     const enum EVENT_AUDIO {
-        /** broadcast to a [[Node]] and all [[Nodes]] in the branch it's the root of after it was appended to a parent */
-        CHILD_APPEND = "childAppendToAudioBranch",
-        /** broadcast to a [[Node]] and all [[Nodes]] in the branch it's the root of just before its being removed from its parent */
-        CHILD_REMOVE = "childRemoveFromAudioBranch",
-        /** broadcast to a [[Node]] and all [[Nodes]] in the branch to update the panners in AudioComponents */
-        UPDATE = "updateAudioBranch"
+        /** broadcast to a [[Node]] and all its descendants in the graph after it was appended to a parent */
+        CHILD_APPEND = "childAppendToAudioGraph",
+        /** broadcast to a [[Node]] and all its descendants in the graph just before its being removed from its parent */
+        CHILD_REMOVE = "childRemoveFromAudioGraph",
+        /** broadcast to a [[Node]] and all its descendants in the graph to update the panners in AudioComponents */
+        UPDATE = "updateAudioGraph"
     }
 }
 declare namespace FudgeCore {
@@ -2373,6 +2372,10 @@ declare namespace FudgeCore {
          * Return the elements of this matrix as a Float32Array
          */
         get(): Float32Array;
+        /**
+         * Return a copy of this
+         */
+        get copy(): Matrix3x3;
         serialize(): Serialization;
         deserialize(_serialization: Serialization): Serializable;
         getMutator(): Mutator;
@@ -2984,9 +2987,9 @@ declare namespace FudgeCore {
          */
         replaceChild(_replace: Node, _with: Node): boolean;
         /**
-         * Generator yielding the node and all successors in the branch below for iteration
+         * Generator yielding the node and all decendants in the graph below for iteration
          */
-        get branch(): IterableIterator<Node>;
+        get graph(): IterableIterator<Node>;
         isUpdated(_timestampUpdate: number): boolean;
         isDescendantOf(_ancestor: Node): boolean;
         /**
@@ -3050,7 +3053,7 @@ declare namespace FudgeCore {
          */
         broadcastEvent(_event: Event): void;
         private broadcastEventRecursive;
-        private getBranchGenerator;
+        private getGraphGenerator;
     }
 }
 declare namespace FudgeCore {
@@ -3129,23 +3132,23 @@ declare namespace FudgeCore {
          */
         static resetFrameBuffer(_color?: Color): void;
         /**
-         * Draws the branch for RayCasting starting with the given [[Node]] using the camera given [[ComponentCamera]].
+         * Draws the graph for RayCasting starting with the given [[Node]] using the camera given [[ComponentCamera]].
          */
-        static drawBranchForRayCast(_node: Node, _cmpCamera: ComponentCamera): PickBuffer[];
+        static drawGraphForRayCast(_node: Node, _cmpCamera: ComponentCamera): PickBuffer[];
         /**
-         * Browses through the buffers (previously created with [[drawBranchForRayCast]]) of the size given
+         * Browses through the buffers (previously created with [[drawGraphForRayCast]]) of the size given
          * and returns an unsorted list of the values at the given position, representing node-ids and depth information as [[RayHit]]s
          */
         static pickNodeAt(_pos: Vector2, _pickBuffers: PickBuffer[], _rect: Rectangle): RayHit[];
         /**
          * The main rendering function to be called from [[Viewport]].
-         * Draws the branch starting with the given [[Node]] using the camera given [[ComponentCamera]].
+         * Draws the graph starting with the given [[Node]] using the camera given [[ComponentCamera]].
          */
-        static drawBranch(_node: Node, _cmpCamera: ComponentCamera, _drawNode?: Function): void;
+        static drawGraph(_node: Node, _cmpCamera: ComponentCamera, _drawNode?: Function): void;
         /**
-         * Recursivly iterates over the branch and renders each node and all successors with the given render function
+         * Recursivly iterates over the graph and renders each node and all successors with the given render function
          */
-        private static drawBranchRecursive;
+        private static drawGraphRecursive;
         /**
          * The standard render function for drawing a single node
          */
@@ -3159,8 +3162,8 @@ declare namespace FudgeCore {
          */
         private static getRayCastTexture;
         /**
-         * Recursively iterates over the branch starting with the node given, recalculates all world transforms,
-         * collects all lights and feeds all shaders used in the branch with these lights
+         * Recursively iterates over the graph starting with the node given, recalculates all world transforms,
+         * collects all lights and feeds all shaders used in the graph with these lights
          */
         private static setupTransformAndLights;
         /**
