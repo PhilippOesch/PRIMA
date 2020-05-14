@@ -16,12 +16,12 @@ namespace L06_Snake3D_HeadControl {
     public move(): void {
       this.dirCurrent = this.dirNew || this.dirCurrent;
       let child: ƒ.Node = this.head;
-      let cmpPrev: ƒ.ComponentTransform = child.getComponent(ƒ.ComponentTransform); 
+      let cmpPrev: ƒ.ComponentTransform = child.getComponent(ƒ.ComponentTransform);
       let mtxHead: ƒ.Matrix4x4;
       while (true) {
         mtxHead = cmpPrev.local.copy;
         mtxHead.translate(this.dirCurrent);
-        if (Math.abs(mtxHead.translation.x) < 6 && Math.abs(mtxHead.translation.y) < 6 && Math.abs(mtxHead.translation.z) < 6)
+        if (Math.abs(mtxHead.translation.x) < 7 && Math.abs(mtxHead.translation.y) < 7 && Math.abs(mtxHead.translation.z) < 7)
           break;
         this.rotate(ƒ.Vector3.Z(-90));
       }
@@ -49,7 +49,7 @@ namespace L06_Snake3D_HeadControl {
 
     private createSegement(_segments: number): void {
       let mesh: ƒ.MeshCube = new ƒ.MeshCube();
-      let mtrSolidWhite: ƒ.Material = new ƒ.Material("SolidWhite", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
+      let mtrSolidWhite: ƒ.Material = new ƒ.Material("SolidWhite", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
 
       for (let i: number = 0; i < _segments; i++) {
         let segment: ƒ.Node = new ƒ.Node("Segment");
@@ -60,7 +60,7 @@ namespace L06_Snake3D_HeadControl {
 
         let cmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidWhite);
         segment.addComponent(cmpMaterial);
-        cmpMaterial.clrPrimary = ƒ.Color.CSS("yellow");
+        cmpMaterial.clrPrimary = ƒ.Color.CSS("WHITE");
 
         segment.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(-1 * i, 0, 0))));
 
@@ -73,32 +73,32 @@ namespace L06_Snake3D_HeadControl {
       this.head.addChild(cosys);
     }
 
-    public isColliding(_inputObject: ƒ.Node): boolean{
-      let snakeHead: ƒ.Node= this.getChildren()[0];
-      let snakeHeadPos: ƒ.Vector3= snakeHead.cmpTransform.local.translation;
-      let snakeHeadScale: ƒ.Vector3= snakeHead.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
-      let inputPos: ƒ.Vector3= _inputObject.cmpTransform.local.translation;
-      let inputScale: ƒ.Vector3= _inputObject.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+    public isColliding(_inputObject: ƒ.Node): boolean {
+      let snakeHead: ƒ.Node = this.getChildren()[0];
+      let snakeHeadPos: ƒ.Vector3 = snakeHead.cmpTransform.local.translation;
+      let snakeHeadScale: ƒ.Vector3 = snakeHead.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+      let inputPos: ƒ.Vector3 = _inputObject.cmpTransform.local.translation;
+      let inputScale: ƒ.Vector3 = _inputObject.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
 
-      let xval= snakeHeadPos.x-inputPos.x
-      let yval= snakeHeadPos.y-inputPos.y
-      let zval= snakeHeadPos.z-inputPos.z
+      let xval: number = Math.abs(snakeHeadPos.x - inputPos.x);
+      let yval: number = Math.abs(snakeHeadPos.y - inputPos.y);
+      let zval: number = Math.abs(snakeHeadPos.z - inputPos.z);
 
-      let distance= Math.sqrt((xval* xval)+ (yval* yval)+ (zval* zval));
-      
-      if(distance< (snakeHeadScale.x/2+ inputScale.x/2)){
+      let distance: number = Math.sqrt((xval * xval) + (yval * yval) + (zval * zval));
+
+      if (distance < (snakeHeadScale.x / 2 + inputScale.x / 2)) {
         return true
       } else {
         return false
       }
     }
 
-    createSnakePart(): ƒ.Node{
-      let snakeLength= this.getChildren().length
-      let lastSegmentPos= this.getChildren()[snakeLength-1].cmpTransform.local.translation.copy
+    createSnakePart(): ƒ.Node {
+      let snakeLength = this.getChildren().length
+      let lastSegmentPos = this.getChildren()[snakeLength - 1].cmpTransform.local.translation.copy
 
       let mesh = new ƒ.MeshCube();
-      let mtrSolidGreen = new ƒ.Material("SolidGreen", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("yellow")));
+      let mtrSolidGreen = new ƒ.Material("SolidGreen", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
 
       let node: ƒ.Node = new ƒ.Node("Snakepart");
 
@@ -109,13 +109,14 @@ namespace L06_Snake3D_HeadControl {
       let cmpMat: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(mtrSolidGreen); //attache Mesh to Node
       node.addComponent(cmpMat); //Add Component into node component Map
 
-      node.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(lastSegmentPos.x-1, lastSegmentPos.y, lastSegmentPos.z))));
+      //Place new Segment behind the recently last segment
+      node.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(new ƒ.Vector3(lastSegmentPos.x - 1, lastSegmentPos.y, lastSegmentPos.z))));
       return node;
-  }
+    }
 
-  addNewSnakePart(): void{
-      let newpart: ƒ.Node= this.createSnakePart();
+    addNewSnakePart(): void {
+      let newpart: ƒ.Node = this.createSnakePart();
       this.appendChild(newpart);
-  }
+    }
   }
 }

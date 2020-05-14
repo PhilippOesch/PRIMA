@@ -10,51 +10,51 @@ namespace L06_Snake3D_HeadControl {
 
         private init(): void{
             let foodPos: ƒ.Vector3;
-            let ebene: number = Math.floor(Math.random() * 4) + 0;
+            let ebene: number = Math.floor(Math.random() * 5) + 0;
 
-            let randomX = Math.floor(Math.random() * 4) + 0;
+            let randomX = Math.floor(Math.random() * 5) + 0;
             randomX *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
 
-            let randomY = Math.floor(Math.random() * 4) + 0;
+            let randomY = Math.floor(Math.random() * 5) + 0;
             randomY *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
 
-            let randomZ = Math.floor(Math.random() * 4) + 0;
+            let randomZ = Math.floor(Math.random() * 5) + 0;
             randomZ *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
 
             switch (ebene) {
-                case 0: foodPos = new ƒ.Vector3(randomX, randomY, 5)
+                case 0: foodPos = new ƒ.Vector3(randomX, randomY, 6)
                     break;
-                case 1: foodPos = new ƒ.Vector3(randomX, randomY, -5)
+                case 1: foodPos = new ƒ.Vector3(randomX, randomY, -6)
                     break;
-                case 2: foodPos = new ƒ.Vector3(randomX, 5, randomZ)
+                case 2: foodPos = new ƒ.Vector3(randomX, 6, randomZ)
                     break;
-                case 3: foodPos = new ƒ.Vector3(randomX, -5, randomZ)
+                case 3: foodPos = new ƒ.Vector3(randomX, -6, randomZ)
                     break;
-                case 4: foodPos = new ƒ.Vector3(4, randomY, randomZ)
+                case 4: foodPos = new ƒ.Vector3(6, randomY, randomZ)
                     break;
-                case 5: foodPos = new ƒ.Vector3(-4, randomY, randomZ)
+                case 5: foodPos = new ƒ.Vector3(-6, randomY, randomZ)
                     break;
             }
 
-            this.addComponent(new ƒ.ComponentMaterial( new ƒ.Material("Food", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("RED")))));
+            this.addComponent(new ƒ.ComponentMaterial( new ƒ.Material("Food", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("RED")))));
             this.addComponent( new ƒ.ComponentMesh(new ƒ.MeshCube()));
             this.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(foodPos)));
 
         }
 
         public isColliding(_input: ƒ.Node): boolean {
-            let object1Pos: ƒ.Vector3 = this.cmpTransform.local.translation;
-            let object1Scale: ƒ.Vector3 = this.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
-            let object2Pos: ƒ.Vector3 = _input.cmpTransform.local.translation;
-            let object2Scale: ƒ.Vector3 = _input.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            let thisPos: ƒ.Vector3 = this.cmpTransform.local.translation;
+            let thisScale: ƒ.Vector3 = this.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            let inputPos: ƒ.Vector3 = _input.cmpTransform.local.translation;
+            let inputScale: ƒ.Vector3 = _input.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
         
-            let xval = object1Pos.x - object2Pos.x
-            let yval = object1Pos.y - object2Pos.y
-            let zval = object1Pos.z - object2Pos.z
+            let xval = Math.abs(thisPos.x - inputPos.x)
+            let yval = Math.abs(thisPos.y - inputPos.y)
+            let zval = Math.abs(thisPos.z - inputPos.z)
         
             let distance = Math.sqrt((xval * xval) + (yval * yval) + (zval * zval));
         
-            if (distance <= (object1Scale.x/2 + object2Scale.x/2)) {
+            if (distance <= (thisScale.x/2 + inputScale.x/2)) {
                 return true
             } else {
                 return false

@@ -1,5 +1,6 @@
 namespace L06_Snake3D_HeadControl {
   import ƒ = FudgeCore;
+
   import ƒAid = FudgeAid;
 
   window.addEventListener("load", hndLoad);
@@ -15,19 +16,13 @@ namespace L06_Snake3D_HeadControl {
     const canvas: HTMLCanvasElement = document.querySelector("canvas");
     ƒ.Debug.log(canvas);
 
-    graph= new ƒ.Node("Game");
+    graph = new ƒ.Node("Game");
     snake = new Snake();
     graph.addChild(snake);
     createNewFood();
     cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
     // graph.addChild(cosys);
-
-    let cube: ƒAid.Node = new ƒAid.Node(
-      "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(9)),
-      new ƒ.Material("Cube", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("GREEN"))),
-      new ƒ.MeshCube()
-    );
-    graph.addChild(cube);
+    createCube();
 
     let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
     cmpCamera.pivot.translate(new ƒ.Vector3(5, 10, 40));
@@ -37,6 +32,17 @@ namespace L06_Snake3D_HeadControl {
     viewport = new ƒ.Viewport();
     viewport.initialize("Viewport", graph, cmpCamera, canvas);
     ƒ.Debug.log(viewport);
+
+    let cmpLightAmbient: ƒ.ComponentLight = new ƒ.ComponentLight(new ƒ.LightAmbient(new ƒ.Color(0.2, 0.2, 0.2)));
+    let cmpLightDirectional: ƒ.ComponentLight = new ƒ.ComponentLight(new ƒ.LightDirectional(new ƒ.Color(1, 1, 1)));
+    let cmp2LightDirectional: ƒ.ComponentLight = new ƒ.ComponentLight(new ƒ.LightDirectional(new ƒ.Color(1, 1, 1)));
+
+    cmpLightDirectional.pivot.lookAt(new ƒ.Vector3(10, -15, -5))
+    cmp2LightDirectional.pivot.lookAt(new ƒ.Vector3(-10, 15, 5))
+
+    graph.addComponent(cmpLightAmbient);
+    graph.addComponent(cmpLightDirectional);
+    graph.addComponent(cmp2LightDirectional);
 
     document.addEventListener("keydown", control);
 
@@ -55,7 +61,11 @@ namespace L06_Snake3D_HeadControl {
     let posCamera: ƒ.Vector3 = snake.head.mtxLocal.translation;
     posCamera.normalize(30);
     viewport.camera.pivot.translation = posCamera;
+
+    let transformation: ƒ.Vector3= ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), snake.getChildren()[0].mtxLocal, false);
     viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
+    console.log(transformation);
+
   }
 
 
@@ -107,7 +117,7 @@ namespace L06_Snake3D_HeadControl {
       }
     }
 
-    if(snake.isColliding(food)){
+    if (snake.isColliding(food)) {
       graph.removeChild(food);
       createNewFood();
       snake.addNewSnakePart();
@@ -121,21 +131,29 @@ namespace L06_Snake3D_HeadControl {
 
   function createNewFood(): void {
     let newFood: Food;
-
     let checkCollision: Boolean;
-    do{
-        checkCollision= true;
-        newFood= new Food()
-        for(let snakeSegments of snake.getChildren()){
-            if(newFood.isColliding(snakeSegments)){
-                checkCollision= false;
-                return;
-            }
+    do {
+      checkCollision = true;
+      newFood = new Food()
+      for (let snakeSegments of snake.getChildren()) {
+        if (newFood.isColliding(snakeSegments)) {
+          checkCollision = false;
+          return;
         }
-    } while(!checkCollision);
- 
-    food= newFood;
+      }
+    } while (!checkCollision);
+
+    food = newFood;
     graph.appendChild(food);
-}
+  }
+
+  function createCube(){
+    let cube: ƒAid.Node = new ƒAid.Node(
+      "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(11)),
+      new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
+      new ƒ.MeshCube()
+    );
+    graph.addChild(cube);
+  }
 
 }

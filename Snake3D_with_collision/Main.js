@@ -18,8 +18,7 @@ var L06_Snake3D_HeadControl;
         createNewFood();
         cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
         // graph.addChild(cosys);
-        let cube = new ƒAid.Node("Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(9)), new ƒ.Material("Cube", ƒ.ShaderUniColor, new ƒ.CoatColored(ƒ.Color.CSS("GREEN"))), new ƒ.MeshCube());
-        graph.addChild(cube);
+        createCube();
         let cmpCamera = new ƒ.ComponentCamera();
         cmpCamera.pivot.translate(new ƒ.Vector3(5, 10, 40));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
@@ -27,6 +26,14 @@ var L06_Snake3D_HeadControl;
         L06_Snake3D_HeadControl.viewport = new ƒ.Viewport();
         L06_Snake3D_HeadControl.viewport.initialize("Viewport", graph, cmpCamera, canvas);
         ƒ.Debug.log(L06_Snake3D_HeadControl.viewport);
+        let cmpLightAmbient = new ƒ.ComponentLight(new ƒ.LightAmbient(new ƒ.Color(0.2, 0.2, 0.2)));
+        let cmpLightDirectional = new ƒ.ComponentLight(new ƒ.LightDirectional(new ƒ.Color(1, 1, 1)));
+        let cmp2LightDirectional = new ƒ.ComponentLight(new ƒ.LightDirectional(new ƒ.Color(1, 1, 1)));
+        cmpLightDirectional.pivot.lookAt(new ƒ.Vector3(10, -15, -5));
+        cmp2LightDirectional.pivot.lookAt(new ƒ.Vector3(-10, 15, 5));
+        graph.addComponent(cmpLightAmbient);
+        graph.addComponent(cmpLightDirectional);
+        graph.addComponent(cmp2LightDirectional);
         document.addEventListener("keydown", control);
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 5);
@@ -41,7 +48,9 @@ var L06_Snake3D_HeadControl;
         let posCamera = snake.head.mtxLocal.translation;
         posCamera.normalize(30);
         L06_Snake3D_HeadControl.viewport.camera.pivot.translation = posCamera;
+        let transformation = ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), snake.getChildren()[0].mtxLocal, false);
         L06_Snake3D_HeadControl.viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
+        console.log(transformation);
     }
     function control(_event) {
         // let direction: ƒ.Vector3;
@@ -109,6 +118,10 @@ var L06_Snake3D_HeadControl;
         } while (!checkCollision);
         food = newFood;
         graph.appendChild(food);
+    }
+    function createCube() {
+        let cube = new ƒAid.Node("Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(11)), new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))), new ƒ.MeshCube());
+        graph.addChild(cube);
     }
 })(L06_Snake3D_HeadControl || (L06_Snake3D_HeadControl = {}));
 //# sourceMappingURL=Main.js.map
