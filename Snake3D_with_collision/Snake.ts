@@ -21,7 +21,7 @@ namespace L06_Snake3D_HeadControl {
       while (true) {
         mtxHead = cmpPrev.local.copy;
         mtxHead.translate(this.dirCurrent);
-        if (Math.abs(mtxHead.translation.x) < 7 && Math.abs(mtxHead.translation.y) < 7 && Math.abs(mtxHead.translation.z) < 7)
+        if (Math.abs(mtxHead.translation.x) < 14 && Math.abs(mtxHead.translation.y) < 14 && Math.abs(mtxHead.translation.z) < 14)
           break;
         this.rotate(ƒ.Vector3.Z(-90));
       }

@@ -15,7 +15,9 @@ var L06_Snake3D_HeadControl;
         graph = new ƒ.Node("Game");
         snake = new L06_Snake3D_HeadControl.Snake();
         graph.addChild(snake);
-        createNewFood();
+        for (var i = 0; i < 10; i++) {
+            createNewFood();
+        }
         cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
         // graph.addChild(cosys);
         createCube();
@@ -46,7 +48,7 @@ var L06_Snake3D_HeadControl;
     }
     function moveCamera() {
         let posCamera = snake.head.mtxLocal.translation;
-        posCamera.normalize(30);
+        posCamera.normalize(50);
         L06_Snake3D_HeadControl.viewport.camera.pivot.translation = posCamera;
         let transformation = ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), snake.getChildren()[0].mtxLocal, false);
         L06_Snake3D_HeadControl.viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
@@ -93,11 +95,18 @@ var L06_Snake3D_HeadControl;
                 gameover();
             }
         }
-        if (snake.isColliding(food)) {
-            graph.removeChild(food);
-            createNewFood();
-            snake.addNewSnakePart();
-        }
+        graph.getChildrenByName("Food").forEach((value) => {
+            if (snake.isColliding(value)) {
+                graph.removeChild(value);
+                createNewFood();
+                snake.addNewSnakePart();
+            }
+        });
+        // if ( food!=null && snake.isColliding(food)) {
+        //   graph.removeChild(food);
+        //   createNewFood();
+        //   snake.addNewSnakePart();
+        // }
     }
     function gameover() {
         //window.location.reload();
@@ -110,17 +119,23 @@ var L06_Snake3D_HeadControl;
             checkCollision = true;
             newFood = new L06_Snake3D_HeadControl.Food();
             for (let snakeSegments of snake.getChildren()) {
-                if (newFood.isColliding(snakeSegments)) {
+                if (newFood != null && newFood.isColliding(snakeSegments)) {
                     checkCollision = false;
                     return;
                 }
             }
+            graph.getChildrenByName("Food").forEach((value) => {
+                if (newFood != null && newFood.isColliding(value)) {
+                    checkCollision = false;
+                    return;
+                }
+            });
         } while (!checkCollision);
         food = newFood;
         graph.appendChild(food);
     }
     function createCube() {
-        let cube = new ƒAid.Node("Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(11)), new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))), new ƒ.MeshCube());
+        let cube = new ƒAid.Node("Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)), new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))), new ƒ.MeshCube());
         graph.addChild(cube);
     }
 })(L06_Snake3D_HeadControl || (L06_Snake3D_HeadControl = {}));

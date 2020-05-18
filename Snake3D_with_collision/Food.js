@@ -9,31 +9,31 @@ var L06_Snake3D_HeadControl;
         }
         init() {
             let foodPos;
-            let ebene = Math.floor(Math.random() * 5) + 0;
-            let randomX = Math.floor(Math.random() * 5) + 0;
+            let ebene = Math.floor(Math.random() * 6) + 0;
+            let randomX = Math.floor(Math.random() * 11) + 0;
             randomX *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
-            let randomY = Math.floor(Math.random() * 5) + 0;
+            let randomY = Math.floor(Math.random() * 11) + 0;
             randomY *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
-            let randomZ = Math.floor(Math.random() * 5) + 0;
+            let randomZ = Math.floor(Math.random() * 11) + 0;
             randomZ *= Math.floor(Math.random() * 2) == 1 ? 1 : -1;
             switch (ebene) {
                 case 0:
-                    foodPos = new ƒ.Vector3(randomX, randomY, 6);
+                    foodPos = new ƒ.Vector3(randomX, randomY, 13);
                     break;
                 case 1:
-                    foodPos = new ƒ.Vector3(randomX, randomY, -6);
+                    foodPos = new ƒ.Vector3(randomX, randomY, -13);
                     break;
                 case 2:
-                    foodPos = new ƒ.Vector3(randomX, 6, randomZ);
+                    foodPos = new ƒ.Vector3(randomX, 13, randomZ);
                     break;
                 case 3:
-                    foodPos = new ƒ.Vector3(randomX, -6, randomZ);
+                    foodPos = new ƒ.Vector3(randomX, -13, randomZ);
                     break;
                 case 4:
-                    foodPos = new ƒ.Vector3(6, randomY, randomZ);
+                    foodPos = new ƒ.Vector3(13, randomY, randomZ);
                     break;
                 case 5:
-                    foodPos = new ƒ.Vector3(-6, randomY, randomZ);
+                    foodPos = new ƒ.Vector3(-13, randomY, randomZ);
                     break;
             }
             this.addComponent(new ƒ.ComponentMaterial(new ƒ.Material("Food", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("RED")))));
