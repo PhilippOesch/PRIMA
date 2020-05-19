@@ -1,6 +1,6 @@
 namespace L06_Snake3D_HeadControl {
   import ƒ = FudgeCore;
-  import ƒAid = FudgeAid;
+  //import ƒAid = FudgeAid;
 
   export class Snake extends ƒ.Node {
     public head: ƒ.Node;
@@ -10,7 +10,7 @@ namespace L06_Snake3D_HeadControl {
     constructor() {
       super("Snake");
       console.log("Creating Snake");
-      this.createSegement(2);
+      this.initSegements(2);
     }
 
     public move(): void {
@@ -47,7 +47,7 @@ namespace L06_Snake3D_HeadControl {
       this.head.mtxLocal.rotate(_rotation);
     }
 
-    private createSegement(_segments: number): void {
+    private initSegements(_segments: number): void {
       let mesh: ƒ.MeshCube = new ƒ.MeshCube();
       let mtrSolidWhite: ƒ.Material = new ƒ.Material("SolidWhite", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
 
@@ -68,15 +68,15 @@ namespace L06_Snake3D_HeadControl {
       }
 
       this.head = this.getChildren()[0];
-      let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
-      cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(5))));
-      this.head.addChild(cosys);
+      // let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
+      // cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(5))));
+      // this.head.addChild(cosys);
     }
 
     public isColliding(_inputObject: ƒ.Node): boolean {
-      let snakeHead: ƒ.Node = this.getChildren()[0];
-      let snakeHeadPos: ƒ.Vector3 = snakeHead.cmpTransform.local.translation;
-      let snakeHeadScale: ƒ.Vector3 = snakeHead.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+
+      let snakeHeadPos: ƒ.Vector3 =  this.head.cmpTransform.local.translation;
+      let snakeHeadScale: ƒ.Vector3 =  this.head.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
       let inputPos: ƒ.Vector3 = _inputObject.cmpTransform.local.translation;
       let inputScale: ƒ.Vector3 = _inputObject.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
 
@@ -93,7 +93,7 @@ namespace L06_Snake3D_HeadControl {
       }
     }
 
-    createSnakePart(): ƒ.Node {
+    private createSnakePart(): ƒ.Node {
       let snakeLength = this.getChildren().length
       let lastSegmentPos = this.getChildren()[snakeLength - 1].cmpTransform.local.translation.copy
 

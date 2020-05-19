@@ -2,12 +2,12 @@
 var L06_Snake3D_HeadControl;
 (function (L06_Snake3D_HeadControl) {
     var ƒ = FudgeCore;
-    var ƒAid = FudgeAid;
+    //import ƒAid = FudgeAid;
     window.addEventListener("load", hndLoad);
     let snake;
     let graph;
     let food;
-    let cosys = new ƒAid.NodeCoordinateSystem("ControlSystem");
+    //let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
     ƒ.RenderManager.initialize(true);
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
@@ -15,10 +15,11 @@ var L06_Snake3D_HeadControl;
         graph = new ƒ.Node("Game");
         snake = new L06_Snake3D_HeadControl.Snake();
         graph.addChild(snake);
-        for (var i = 0; i < 10; i++) {
+        let foodAmount = 20;
+        for (var i = 0; i < foodAmount; i++) {
             createNewFood();
         }
-        cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
+        //cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
         // graph.addChild(cosys);
         createCube();
         let cmpCamera = new ƒ.ComponentCamera();
@@ -38,7 +39,7 @@ var L06_Snake3D_HeadControl;
         graph.addComponent(cmp2LightDirectional);
         document.addEventListener("keydown", control);
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
-        ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 5);
+        ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 7);
     }
     function update(_event) {
         collisionDetection();
@@ -135,7 +136,18 @@ var L06_Snake3D_HeadControl;
         graph.appendChild(food);
     }
     function createCube() {
-        let cube = new ƒAid.Node("Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)), new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))), new ƒ.MeshCube());
+        // let cube: ƒAid.Node = new ƒAid.Node(
+        //   "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)),
+        //   new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
+        //   new ƒ.MeshCube()
+        // );
+        // graph.addChild(cube);
+        let mesh = new ƒ.MeshCube();
+        let mtrPlayfield = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5)));
+        let cube = new ƒ.Node("playfield");
+        cube.addComponent(new ƒ.ComponentMesh(mesh));
+        cube.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
+        cube.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25))));
         graph.addChild(cube);
     }
 })(L06_Snake3D_HeadControl || (L06_Snake3D_HeadControl = {}));

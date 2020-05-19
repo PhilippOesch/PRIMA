@@ -1,14 +1,14 @@
 namespace L06_Snake3D_HeadControl {
   import ƒ = FudgeCore;
 
-  import ƒAid = FudgeAid;
+  //import ƒAid = FudgeAid;
 
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
   let snake: Snake;
   let graph: ƒ.Node;
   let food: ƒ.Node;
-  let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
+  //let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
   ƒ.RenderManager.initialize(true);
 
 
@@ -20,11 +20,13 @@ namespace L06_Snake3D_HeadControl {
     snake = new Snake();
     graph.addChild(snake);
     
-    for(var i= 0; i <10; i++){
+    let foodAmount: number= 20;
+
+    for(var i= 0; i <foodAmount; i++){
       createNewFood();
     }
 
-    cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
+    //cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(10))));
     // graph.addChild(cosys);
     createCube();
 
@@ -51,7 +53,7 @@ namespace L06_Snake3D_HeadControl {
     document.addEventListener("keydown", control);
 
     ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, update);
-    ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 5);
+    ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 7);
   }
 
   function update(_event: ƒ.Eventƒ): void {
@@ -146,7 +148,7 @@ namespace L06_Snake3D_HeadControl {
     let checkCollision: Boolean;
     do {
       checkCollision = true;
-      newFood = new Food()
+      newFood = new Food();
       for (let snakeSegments of snake.getChildren()) {
         if (newFood!=null && newFood.isColliding(snakeSegments)) {
           checkCollision = false;
@@ -168,11 +170,21 @@ namespace L06_Snake3D_HeadControl {
   }
 
   function createCube(){
-    let cube: ƒAid.Node = new ƒAid.Node(
-      "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)),
-      new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
-      new ƒ.MeshCube()
-    );
+    // let cube: ƒAid.Node = new ƒAid.Node(
+    //   "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)),
+    //   new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
+    //   new ƒ.MeshCube()
+    // );
+    // graph.addChild(cube);
+
+    let mesh: ƒ.MeshCube = new ƒ.MeshCube();
+    let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5)));
+
+    let cube: ƒ.Node= new ƒ.Node("playfield");
+    cube.addComponent(new ƒ.ComponentMesh(mesh));
+    cube.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
+    cube.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25))));
+
     graph.addChild(cube);
   }
 

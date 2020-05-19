@@ -2,13 +2,13 @@
 var L06_Snake3D_HeadControl;
 (function (L06_Snake3D_HeadControl) {
     var ƒ = FudgeCore;
-    var ƒAid = FudgeAid;
+    //import ƒAid = FudgeAid;
     class Snake extends ƒ.Node {
         constructor() {
             super("Snake");
             this.dirCurrent = ƒ.Vector3.X();
             console.log("Creating Snake");
-            this.createSegement(2);
+            this.initSegements(2);
         }
         move() {
             this.dirCurrent = this.dirNew || this.dirCurrent;
@@ -39,7 +39,7 @@ var L06_Snake3D_HeadControl;
         rotate(_rotation) {
             this.head.mtxLocal.rotate(_rotation);
         }
-        createSegement(_segments) {
+        initSegements(_segments) {
             let mesh = new ƒ.MeshCube();
             let mtrSolidWhite = new ƒ.Material("SolidWhite", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
             for (let i = 0; i < _segments; i++) {
@@ -54,14 +54,13 @@ var L06_Snake3D_HeadControl;
                 this.appendChild(segment);
             }
             this.head = this.getChildren()[0];
-            let cosys = new ƒAid.NodeCoordinateSystem("ControlSystem");
-            cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(5))));
-            this.head.addChild(cosys);
+            // let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
+            // cosys.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(5))));
+            // this.head.addChild(cosys);
         }
         isColliding(_inputObject) {
-            let snakeHead = this.getChildren()[0];
-            let snakeHeadPos = snakeHead.cmpTransform.local.translation;
-            let snakeHeadScale = snakeHead.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            let snakeHeadPos = this.head.cmpTransform.local.translation;
+            let snakeHeadScale = this.head.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
             let inputPos = _inputObject.cmpTransform.local.translation;
             let inputScale = _inputObject.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
             let xval = Math.abs(snakeHeadPos.x - inputPos.x);
