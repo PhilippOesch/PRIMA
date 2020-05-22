@@ -2611,7 +2611,7 @@ declare namespace FudgeCore {
          */
         getIndex<T>(_array: Array<T>): number;
         /**
-         * Returns removes a randomly selected element from the given array and returns it
+         * Removes a randomly selected element from the given array and returns it
          */
         splice<T>(_array: Array<T>): T;
         /**
@@ -2689,34 +2689,23 @@ declare namespace FudgeCore {
          */
         static NORMALIZATION(_vector: Vector3, _length?: number): Vector3;
         /**
-         * Sums up multiple vectors.
-         * @param _vectors A series of vectors to sum up
-         * @returns A new vector representing the sum of the given vectors
+         * Returns the resulting vector attained by addition of all given vectors.
          */
         static SUM(..._vectors: Vector3[]): Vector3;
         /**
-         * Subtracts two vectors.
-         * @param _a The vector to subtract from.
-         * @param _b The vector to subtract.
-         * @returns A new vector representing the difference of the given vectors
+         * Returns the result of the subtraction of two vectors.
          */
-        static DIFFERENCE(_a: Vector3, _b: Vector3): Vector3;
+        static DIFFERENCE(_minuend: Vector3, _subtrahend: Vector3): Vector3;
         /**
          * Returns a new vector representing the given vector scaled by the given scaling factor
          */
         static SCALE(_vector: Vector3, _scaling: number): Vector3;
         /**
          * Computes the crossproduct of 2 vectors.
-         * @param _a The vector to multiply.
-         * @param _b The vector to multiply by.
-         * @returns A new vector representing the crossproduct of the given vectors
          */
         static CROSS(_a: Vector3, _b: Vector3): Vector3;
         /**
          * Computes the dotproduct of 2 vectors.
-         * @param _a The vector to multiply.
-         * @param _b The vector to multiply by.
-         * @returns A new vector representing the dotproduct of the given vectors
          */
         static DOT(_a: Vector3, _b: Vector3): number;
         /**
@@ -2730,24 +2719,74 @@ declare namespace FudgeCore {
          */
         static REFLECTION(_incoming: Vector3, _normal: Vector3): Vector3;
         /**
+         * Divides the dividend by the divisor component by component and returns the result
+         */
+        static RATIO(_dividend: Vector3, _divisor: Vector3): Vector3;
+        /**
          * Returns true if the coordinates of this and the given vector are to be considered identical within the given tolerance
          * TODO: examine, if tolerance as criterium for the difference is appropriate with very large coordinate values or if _tolerance should be multiplied by coordinate value
          */
         equals(_compare: Vector3, _tolerance?: number): boolean;
+        /**
+         * Returns true if the position described by this is within a cube with the opposite corners 1 and 2
+         */
+        isInsideCube(_corner1: Vector3, _corner2: Vector3): boolean;
+        /**
+         * Returns true if the position described by this is within a sphere with the given center and radius
+         */
+        isInsideSphere(_center: Vector3, _radius: number): boolean;
+        /**
+         * Adds the given vector to this
+         */
         add(_addend: Vector3): void;
+        /**
+         * Subtracts the given vector from this
+         */
         subtract(_subtrahend: Vector3): void;
-        scale(_scale: number): void;
+        /**
+         * Scales this vector by the given scalar
+         */
+        scale(_scalar: number): void;
+        /**
+         * Normalizes this to the given length, 1 by default
+         */
         normalize(_length?: number): void;
+        /**
+         * Defines the components of this vector with the given numbers
+         */
         set(_x?: number, _y?: number, _z?: number): void;
+        /**
+         * Returns this vector as a new Float32Array (copy)
+         */
         get(): Float32Array;
+        /**
+         * Returns a copy of this vector
+         */
         get copy(): Vector3;
+        /**
+         * Transforms this vector by the given matrix, including or exluding the translation.
+         * Including is the default, excluding will only rotate and scale this vector.
+         */
         transform(_matrix: Matrix4x4, _includeTranslation?: boolean): void;
         /**
          * Drops the z-component and returns a Vector2 consisting of the x- and y-components
          */
         toVector2(): Vector2;
+        /**
+         * Reflects this vector at a given normal. See [[REFLECTION]]
+         */
         reflect(_normal: Vector3): void;
+        /**
+         * Shuffles the components of this vector
+         */
+        shuffle(): void;
+        /**
+         * Returns a formatted string representation of this vector
+         */
         toString(): string;
+        /**
+         * Uses the standard array.map functionality to perform the given function on all components of this vector
+         */
         map(_function: (value: number, index: number, array: Float32Array) => number): Vector3;
         getMutator(): Mutator;
         protected reduceMutator(_mutator: Mutator): void;
@@ -2933,14 +2972,6 @@ declare namespace FudgeCore {
         activate(_on: boolean): void;
         get isActive(): boolean;
         /**
-         * Returns a reference to this nodes parent node
-         */
-        getParent(): Node | null;
-        /**
-         * Traces back the ancestors of this node and returns the first
-         */
-        getAncestor(): Node | null;
-        /**
          * Shortcut to retrieve this nodes [[ComponentTransform]]
          */
         get cmpTransform(): ComponentTransform;
@@ -2950,36 +2981,49 @@ declare namespace FudgeCore {
          */
         get mtxLocal(): Matrix4x4;
         /**
+         * Returns a reference to this nodes parent node
+         */
+        getParent(): Node | null;
+        /**
+         * Traces back the ancestors of this node and returns the first
+         */
+        getAncestor(): Node | null;
+        /**
+         * Returns the number of children attached to this
+         */
+        get nChildren(): number;
+        /**
+         * Returns child at the given index in the list of children
+         */
+        getChild(_index: number): Node;
+        /**
          * Returns a clone of the list of children
          */
         getChildren(): Node[];
         /**
          * Returns an array of references to childnodes with the supplied name.
-         * @param _name The name of the nodes to be found.
-         * @return An array with references to nodes
          */
         getChildrenByName(_name: string): Node[];
         /**
          * Simply calls [[addChild]]. This reference is here solely because appendChild is the equivalent method in DOM.
          * See and preferably use [[addChild]]
          */
-        readonly appendChild: (_node: Node) => void;
+        readonly appendChild: (_child: Node) => void;
         /**
          * Adds the given reference to a node to the list of children, if not already in
-         * @param _node The node to be added as a child
          * @throws Error when trying to add an ancestor of this
          */
-        addChild(_node: Node): void;
+        addChild(_child: Node): void;
         /**
          * Removes the reference to the give node from the list of children
-         * @param _node The node to be removed.
+         * @param _child The node to be removed.
          */
-        removeChild(_node: Node): void;
+        removeChild(_child: Node): void;
         /**
          * Returns the position of the node in the list of children or -1 if not found
-         * @param _node The node to be found.
+         * @param _search The node to be found.
          */
-        findChild(_node: Node): number;
+        findChild(_search: Node): number;
         /**
          * Replaces a child node with another, preserving the position in the list of children
          * @param _replace The node to be replaced

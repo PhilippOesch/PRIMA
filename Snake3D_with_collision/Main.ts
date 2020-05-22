@@ -1,13 +1,14 @@
-namespace L06_Snake3D_HeadControl {
+namespace Snake3D {
   import ƒ = FudgeCore;
 
   //import ƒAid = FudgeAid;
 
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
-  let snake: Snake;
-  let graph: ƒ.Node;
+  //let snake: Snake;
+  export let graph: ƒ.Node;
   let food: ƒ.Node;
+  let aISnake: AISnake;
   //let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
   ƒ.RenderManager.initialize(true);
 
@@ -17,9 +18,12 @@ namespace L06_Snake3D_HeadControl {
     ƒ.Debug.log(canvas);
 
     graph = new ƒ.Node("Game");
-    snake = new Snake();
-    graph.addChild(snake);
-    
+    //snake = new Snake("PlayerSnake");
+    //graph.addChild(snake);
+    aISnake= new AISnake();
+    graph.addChild(aISnake);
+    console.log(aISnake);
+
     let foodAmount: number= 20;
 
     for(var i= 0; i <foodAmount; i++){
@@ -58,19 +62,19 @@ namespace L06_Snake3D_HeadControl {
 
   function update(_event: ƒ.Eventƒ): void {
     collisionDetection();
-    snake.move();
+    aISnake.move();
     moveCamera();
     viewport.draw();
   }
 
   function moveCamera(): void {
-    let posCamera: ƒ.Vector3 = snake.head.mtxLocal.translation;
+    let posCamera: ƒ.Vector3 = aISnake.head.mtxLocal.translation;
     posCamera.normalize(50);
     viewport.camera.pivot.translation = posCamera;
 
-    let transformation: ƒ.Vector3= ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), snake.getChildren()[0].mtxLocal, false);
+    // let transformation: ƒ.Vector3= ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), aISnake.head.mtxLocal, false);
     viewport.camera.pivot.lookAt(ƒ.Vector3.ZERO());
-    console.log(transformation);
+    //console.log(transformation);
 
   }
 
@@ -110,24 +114,25 @@ namespace L06_Snake3D_HeadControl {
         return;
     }
 
-    snake.rotate(rotation);
+    //aISnake.rotate(rotation);
+    console.log(rotation);
     // cosys.mtxLocal.rotate(rotation);
   }
 
   function collisionDetection(): void {
-    for (let i = 3; i < snake.getChildren().length; i++) {
-      let segment = snake.getChildren()[i];
-      if (snake.isColliding(segment)) {
-        console.log("Collision")
-        gameover();
-      }
-    }
+    // for (let i = 3; i < aISnake.getChildren().length; i++) {
+    //   let segment = aISnake.getChildren()[i];
+    //   if (aISnake.collisionSphere.isColliding(segment)) {
+    //     console.log("Collision")
+    //     gameover();
+    //   }
+    // }
 
     graph.getChildrenByName("Food").forEach((value)=> {
-      if(snake.isColliding(value)){
+      if(aISnake.collisionSphere.isColliding(value)){
         graph.removeChild(value);
         createNewFood();
-        snake.addNewSnakePart();
+        aISnake.grow(1);
       }
     })
 
@@ -138,10 +143,10 @@ namespace L06_Snake3D_HeadControl {
     // }
   }
 
-  function gameover(): void {
-    //window.location.reload();
-    ƒ.Loop.stop();
-  }
+  // function gameover(): void {
+  //   //window.location.reload();
+  //   ƒ.Loop.stop();
+  // }
 
   function createNewFood(): void {
     let newFood: Food;
@@ -149,15 +154,15 @@ namespace L06_Snake3D_HeadControl {
     do {
       checkCollision = true;
       newFood = new Food();
-      for (let snakeSegments of snake.getChildren()) {
-        if (newFood!=null && newFood.isColliding(snakeSegments)) {
+      for (let snakeSegment of aISnake.getChildren()) {
+        if (newFood!=null && newFood.collisionSphere.isColliding(snakeSegment)) {
           checkCollision = false;
           return;
         }
       }
 
       graph.getChildrenByName("Food").forEach((value)=> {
-        if(newFood!=null &&newFood.isColliding(value)){
+        if(newFood!=null &&newFood.collisionSphere.isColliding(value)){
           checkCollision = false;
           return;
         }
