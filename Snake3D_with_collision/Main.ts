@@ -5,7 +5,7 @@ namespace Snake3D {
 
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
-  //let snake: Snake;
+  let snake: Snake;
   export let graph: ƒ.Node;
   let food: ƒ.Node;
   let aISnake: AISnake;
@@ -18,15 +18,16 @@ namespace Snake3D {
     ƒ.Debug.log(canvas);
 
     graph = new ƒ.Node("Game");
-    //snake = new Snake("PlayerSnake");
-    //graph.addChild(snake);
-    aISnake= new AISnake();
+    snake = new Snake("PlayerSnake");
+    snake.rotate(ƒ.Vector3.Y(180))
+    graph.addChild(snake);
+    aISnake = new AISnake();
     graph.addChild(aISnake);
-    console.log(aISnake);
+    console.log(snake);
 
-    let foodAmount: number= 20;
+    let foodAmount: number = 20;
 
-    for(var i= 0; i <foodAmount; i++){
+    for (var i = 0; i < foodAmount; i++) {
       createNewFood();
     }
 
@@ -62,13 +63,14 @@ namespace Snake3D {
 
   function update(_event: ƒ.Eventƒ): void {
     collisionDetection();
+    snake.move()
     aISnake.move();
     moveCamera();
     viewport.draw();
   }
 
   function moveCamera(): void {
-    let posCamera: ƒ.Vector3 = aISnake.head.mtxLocal.translation;
+    let posCamera: ƒ.Vector3 = aISnake.head.cmpTransform.local.translation.copy;
     posCamera.normalize(50);
     viewport.camera.pivot.translation = posCamera;
 
@@ -114,22 +116,36 @@ namespace Snake3D {
         return;
     }
 
-    //aISnake.rotate(rotation);
+    snake.rotate(rotation);
     console.log(rotation);
     // cosys.mtxLocal.rotate(rotation);
   }
 
   function collisionDetection(): void {
-    // for (let i = 3; i < aISnake.getChildren().length; i++) {
-    //   let segment = aISnake.getChildren()[i];
-    //   if (aISnake.collisionSphere.isColliding(segment)) {
-    //     console.log("Collision")
-    //     gameover();
-    //   }
-    // }
+    for (let i = 3; i < snake.getChildren().length; i++) {
+      let segment = snake.getChildren()[i];
+      if (snake.collisionSphere.isColliding(segment)) {
+        console.log("Collision")
+        gameover();
+      }
+    }
 
-    graph.getChildrenByName("Food").forEach((value)=> {
-      if(aISnake.collisionSphere.isColliding(value)){
+    for (let i = 3; i < aISnake.getChildren().length; i++) {
+      let segment = aISnake.getChildren()[i];
+      if (aISnake.collisionSphere.isColliding(segment)) {
+        console.log("Collision")
+        gameover();
+      }
+    }
+
+    graph.getChildrenByName("Food").forEach((value) => {
+      if (snake.collisionSphere.isColliding(value)) {
+        graph.removeChild(value);
+        createNewFood();
+        snake.grow(1);
+      }
+
+      if (aISnake.collisionSphere.isColliding(value)) {
         graph.removeChild(value);
         createNewFood();
         aISnake.grow(1);
@@ -143,10 +159,10 @@ namespace Snake3D {
     // }
   }
 
-  // function gameover(): void {
-  //   //window.location.reload();
-  //   ƒ.Loop.stop();
-  // }
+  function gameover(): void {
+    //window.location.reload();
+    ƒ.Loop.stop();
+  }
 
   function createNewFood(): void {
     let newFood: Food;
@@ -155,14 +171,14 @@ namespace Snake3D {
       checkCollision = true;
       newFood = new Food();
       for (let snakeSegment of aISnake.getChildren()) {
-        if (newFood!=null && newFood.collisionSphere.isColliding(snakeSegment)) {
+        if (newFood != null && newFood.collisionSphere.isColliding(snakeSegment)) {
           checkCollision = false;
           return;
         }
       }
 
-      graph.getChildrenByName("Food").forEach((value)=> {
-        if(newFood!=null &&newFood.collisionSphere.isColliding(value)){
+      graph.getChildrenByName("Food").forEach((value) => {
+        if (newFood != null && newFood.collisionSphere.isColliding(value)) {
           checkCollision = false;
           return;
         }
@@ -174,7 +190,7 @@ namespace Snake3D {
     graph.appendChild(food);
   }
 
-  function createCube(){
+  function createCube() {
     // let cube: ƒAid.Node = new ƒAid.Node(
     //   "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)),
     //   new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
@@ -185,7 +201,7 @@ namespace Snake3D {
     let mesh: ƒ.MeshCube = new ƒ.MeshCube();
     let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5)));
 
-    let cube: ƒ.Node= new ƒ.Node("playfield");
+    let cube: ƒ.Node = new ƒ.Node("playfield");
     cube.addComponent(new ƒ.ComponentMesh(mesh));
     cube.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
     cube.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25))));

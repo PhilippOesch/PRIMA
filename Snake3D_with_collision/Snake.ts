@@ -10,12 +10,12 @@ namespace Snake3D {
     protected mesh: ƒ.MeshCube;
     protected material: ƒ.Material;
 
-    constructor(_name: string) {
+    constructor(_name: string, _material: ƒ.Material= new ƒ.Material("SnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")))) {
       super(_name);
       console.log("Creating Snake");
       this.mesh = new ƒ.MeshCube();
-      this.material= new ƒ.Material("SolidWhite", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
-      this.grow(2);
+      this.material= _material
+      this.grow(4);
       this.head = this.getChild(0);
       this.collisionSphere= new CollisionSphere(this.head);
     }
@@ -73,12 +73,13 @@ namespace Snake3D {
     }
 
     public grow(_nSegments: number): void {
-      // TODO: implement shrinking
       if (_nSegments < 0)
         return;
 
-      let segment: ƒ.Node = this.createSegment();
-      this.appendChild(segment);
+      for (let i: number = 0; i < _nSegments; i++) {
+        let segment: ƒ.Node = this.createSegment();
+        this.appendChild(segment);
+      }
     }
   }
 }

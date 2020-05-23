@@ -4,13 +4,13 @@ var Snake3D;
     var ƒ = FudgeCore;
     //import ƒAid = FudgeAid;
     class Snake extends ƒ.Node {
-        constructor(_name) {
+        constructor(_name, _material = new ƒ.Material("SnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")))) {
             super(_name);
             this.dirCurrent = ƒ.Vector3.X();
             console.log("Creating Snake");
             this.mesh = new ƒ.MeshCube();
-            this.material = new ƒ.Material("SolidWhite", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")));
-            this.grow(2);
+            this.material = _material;
+            this.grow(4);
             this.head = this.getChild(0);
             this.collisionSphere = new Snake3D.CollisionSphere(this.head);
         }
@@ -57,11 +57,12 @@ var Snake3D;
             return segment;
         }
         grow(_nSegments) {
-            // TODO: implement shrinking
             if (_nSegments < 0)
                 return;
-            let segment = this.createSegment();
-            this.appendChild(segment);
+            for (let i = 0; i < _nSegments; i++) {
+                let segment = this.createSegment();
+                this.appendChild(segment);
+            }
         }
     }
     Snake3D.Snake = Snake;
@@ -73,34 +74,62 @@ var Snake3D;
     var ƒ = FudgeCore;
     class AISnake extends Snake3D.Snake {
         constructor() {
-            super("AISnake");
-            this.awarenessArea = new Snake3D.AwarenesArea(10, this.head);
+            var material = new ƒ.Material("AISnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("Orange")));
+            super("AISnake", material);
+            this.awarenessArea = new Snake3D.AwarenesArea(15, this.head);
         }
         move() {
             //get food Objects inside detection Area
-            let inAwarenesArea = this.getAwarenessArea();
+            let inAwarenesArea = this.getFoodInArea();
+            let segInAwarenesArea = this.getSegmentsInArea();
             let closest = null;
             let child = this.head;
+            let closestSegment = null;
+            let closestSegmentDistance = null;
             //get nearest Food Object
             if (inAwarenesArea != undefined) {
                 inAwarenesArea.forEach((value) => {
                     if (closest == null) {
                         closest = value;
                     }
-                    else if (this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < this.getDistance(closest.mtxLocal.translation, child.mtxLocal.translation)) {
+                    else if ((closestSegmentDistance) < this.getDistance(closest.mtxLocal.translation, child.mtxLocal.translation)) {
                         closest = value;
                     }
                 });
             }
-            if (closest != null) {
-                let goRightPos = child.mtxLocal.copy;
-                goRightPos.rotate(ƒ.Vector3.Y(-90));
-                goRightPos.translate(this.dirCurrent);
-                let goLeftPos = child.mtxLocal.copy;
-                goLeftPos.rotate(ƒ.Vector3.Y(90));
-                goLeftPos.translate(this.dirCurrent);
-                let goStreightPos = child.mtxLocal.copy;
-                goStreightPos.translate(this.dirCurrent);
+            if (segInAwarenesArea != undefined) {
+                segInAwarenesArea.forEach((value) => {
+                    let valueSegmentDistance = this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
+                    if (closestSegment == null) {
+                        closestSegment = value;
+                        closestSegmentDistance = valueSegmentDistance;
+                    }
+                    else if (this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < this.getDistance(closestSegment.mtxLocal.translation, child.mtxLocal.translation)) {
+                        closestSegment = value;
+                        closestSegmentDistance = valueSegmentDistance;
+                    }
+                });
+            }
+            let goRightPos = child.mtxLocal.copy;
+            goRightPos.rotate(ƒ.Vector3.Y(-90));
+            goRightPos.translate(this.dirCurrent);
+            let goLeftPos = child.mtxLocal.copy;
+            goLeftPos.rotate(ƒ.Vector3.Y(90));
+            goLeftPos.translate(this.dirCurrent);
+            let goStreightPos = child.mtxLocal.copy;
+            goStreightPos.translate(this.dirCurrent);
+            if (closestSegment != null && closestSegmentDistance < 3) {
+                let goRightDist = this.getDistance(closestSegment.mtxLocal.translation, goRightPos.translation);
+                let goLeftDist = this.getDistance(closestSegment.mtxLocal.translation, goLeftPos.translation);
+                let goStreightDist = this.getDistance(closestSegment.mtxLocal.translation, goStreightPos.translation);
+                if (goRightDist >= goLeftDist && goRightDist > goStreightDist) {
+                    this.rotate(ƒ.Vector3.Y(-90));
+                }
+                else if (goLeftDist > goRightDist && goLeftDist > goStreightDist) {
+                    this.rotate(ƒ.Vector3.Y(90));
+                }
+            }
+            else if (closest != null) {
                 let goRightDist = this.getDistance(closest.mtxLocal.translation, goRightPos.translation);
                 let goLeftDist = this.getDistance(closest.mtxLocal.translation, goLeftPos.translation);
                 let goStreightDist = this.getDistance(closest.mtxLocal.translation, goStreightPos.translation);
@@ -128,7 +157,7 @@ var Snake3D;
                 cmpNew = cmpPrev;
             }
         }
-        getAwarenessArea() {
+        getFoodInArea() {
             let objectsInArea = new Array();
             Snake3D.graph.getChildrenByName("Food").forEach(value => {
                 if (this.awarenessArea.isColliding(value)) {
@@ -136,6 +165,15 @@ var Snake3D;
                 }
             });
             // console.log(objectsInArea);
+            return objectsInArea;
+        }
+        getSegmentsInArea() {
+            let objectsInArea = new Array();
+            this.getChildren().forEach((value, index) => {
+                if (this.awarenessArea.isColliding(value) && index > 3) {
+                    objectsInArea.push(value);
+                }
+            });
             return objectsInArea;
         }
         getDistance(_input1, _input2) {
@@ -227,6 +265,7 @@ var Snake3D;
     var ƒ = FudgeCore;
     //import ƒAid = FudgeAid;
     window.addEventListener("load", hndLoad);
+    let snake;
     let food;
     let aISnake;
     //let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
@@ -235,11 +274,12 @@ var Snake3D;
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
         Snake3D.graph = new ƒ.Node("Game");
-        //snake = new Snake("PlayerSnake");
-        //graph.addChild(snake);
+        snake = new Snake3D.Snake("PlayerSnake");
+        snake.rotate(ƒ.Vector3.Y(180));
+        Snake3D.graph.addChild(snake);
         aISnake = new Snake3D.AISnake();
         Snake3D.graph.addChild(aISnake);
-        console.log(aISnake);
+        console.log(snake);
         let foodAmount = 20;
         for (var i = 0; i < foodAmount; i++) {
             createNewFood();
@@ -268,12 +308,13 @@ var Snake3D;
     }
     function update(_event) {
         collisionDetection();
+        snake.move();
         aISnake.move();
         moveCamera();
         Snake3D.viewport.draw();
     }
     function moveCamera() {
-        let posCamera = aISnake.head.mtxLocal.translation;
+        let posCamera = aISnake.head.cmpTransform.local.translation.copy;
         posCamera.normalize(50);
         Snake3D.viewport.camera.pivot.translation = posCamera;
         // let transformation: ƒ.Vector3= ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), aISnake.head.mtxLocal, false);
@@ -310,19 +351,31 @@ var Snake3D;
             default:
                 return;
         }
-        //aISnake.rotate(rotation);
+        snake.rotate(rotation);
         console.log(rotation);
         // cosys.mtxLocal.rotate(rotation);
     }
     function collisionDetection() {
-        // for (let i = 3; i < aISnake.getChildren().length; i++) {
-        //   let segment = aISnake.getChildren()[i];
-        //   if (aISnake.collisionSphere.isColliding(segment)) {
-        //     console.log("Collision")
-        //     gameover();
-        //   }
-        // }
+        for (let i = 3; i < snake.getChildren().length; i++) {
+            let segment = snake.getChildren()[i];
+            if (snake.collisionSphere.isColliding(segment)) {
+                console.log("Collision");
+                gameover();
+            }
+        }
+        for (let i = 3; i < aISnake.getChildren().length; i++) {
+            let segment = aISnake.getChildren()[i];
+            if (aISnake.collisionSphere.isColliding(segment)) {
+                console.log("Collision");
+                gameover();
+            }
+        }
         Snake3D.graph.getChildrenByName("Food").forEach((value) => {
+            if (snake.collisionSphere.isColliding(value)) {
+                Snake3D.graph.removeChild(value);
+                createNewFood();
+                snake.grow(1);
+            }
             if (aISnake.collisionSphere.isColliding(value)) {
                 Snake3D.graph.removeChild(value);
                 createNewFood();
@@ -335,10 +388,10 @@ var Snake3D;
         //   snake.addNewSnakePart();
         // }
     }
-    // function gameover(): void {
-    //   //window.location.reload();
-    //   ƒ.Loop.stop();
-    // }
+    function gameover() {
+        //window.location.reload();
+        ƒ.Loop.stop();
+    }
     function createNewFood() {
         let newFood;
         let checkCollision;
