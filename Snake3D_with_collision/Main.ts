@@ -5,9 +5,10 @@ namespace Snake3D {
 
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
-  let snake: Snake;
   export let graph: ƒ.Node;
+  export let size: number = 20;
   let food: ƒ.Node;
+  let snake: Snake;
   let aISnake: AISnake;
   //let cosys: ƒAid.NodeCoordinateSystem = new ƒAid.NodeCoordinateSystem("ControlSystem");
   ƒ.RenderManager.initialize(true);
@@ -25,7 +26,7 @@ namespace Snake3D {
     graph.addChild(aISnake);
     console.log(snake);
 
-    let foodAmount: number = 20;
+    let foodAmount: number = 30;
 
     for (var i = 0; i < foodAmount; i++) {
       createNewFood();
@@ -71,7 +72,7 @@ namespace Snake3D {
 
   function moveCamera(): void {
     let posCamera: ƒ.Vector3 = aISnake.head.cmpTransform.local.translation.copy;
-    posCamera.normalize(50);
+    posCamera.normalize(70);
     viewport.camera.pivot.translation = posCamera;
 
     // let transformation: ƒ.Vector3= ƒ.Vector3.TRANSFORMATION(ƒ.Vector3.X(), aISnake.head.mtxLocal, false);
@@ -191,20 +192,13 @@ namespace Snake3D {
   }
 
   function createCube() {
-    // let cube: ƒAid.Node = new ƒAid.Node(
-    //   "Cube", ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25)),
-    //   new ƒ.Material("Cube", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5))),
-    //   new ƒ.MeshCube()
-    // );
-    // graph.addChild(cube);
-
     let mesh: ƒ.MeshCube = new ƒ.MeshCube();
     let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.6, 0.5)));
 
     let cube: ƒ.Node = new ƒ.Node("playfield");
     cube.addComponent(new ƒ.ComponentMesh(mesh));
     cube.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
-    cube.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(25))));
+    cube.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE((size * 2) - 1))));
 
     graph.addChild(cube);
   }

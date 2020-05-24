@@ -28,7 +28,7 @@ namespace Snake3D {
       while (true) {
         mtxHead = cmpPrev.local.copy;
         mtxHead.translate(this.dirCurrent);
-        if (Math.abs(mtxHead.translation.x) < 14 && Math.abs(mtxHead.translation.y) < 14 && Math.abs(mtxHead.translation.z) < 14)
+        if (Math.abs(mtxHead.translation.x) < size && Math.abs(mtxHead.translation.y) < size && Math.abs(mtxHead.translation.z) < size)
           break;
         this.rotate(ƒ.Vector3.Z(-90));
       }

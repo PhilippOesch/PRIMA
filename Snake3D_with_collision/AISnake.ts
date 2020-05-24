@@ -18,33 +18,31 @@ namespace Snake3D {
             let segInAwarenesArea: Array<ƒ.Node> = this.getSegmentsInArea();
             let closest: ƒ.Node = null
             let child: ƒ.Node = this.head;
-            let closestSegment: ƒ.Node = null
-            let closestSegmentDistance: number = null;
+            let closestSegmentDistance: number= null;
 
             //get nearest Food Object
             if (inAwarenesArea != undefined) {
                 inAwarenesArea.forEach((value) => {
                     if (closest == null) {
                         closest = value;
-                    } else if ((closestSegmentDistance) < this.getDistance(closest.mtxLocal.translation, child.mtxLocal.translation)) {
+                    } else if (this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < this.getDistance(closest.mtxLocal.translation, child.mtxLocal.translation)) {
                         closest = value;
                     }
                 });
             }
 
+
             if (segInAwarenesArea != undefined) {
-                segInAwarenesArea.forEach((value) => {
-                    let valueSegmentDistance = this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
-                    if (closestSegment == null) {
-                        closestSegment = value;
-                        closestSegmentDistance = valueSegmentDistance;
-                    } else if (this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < this.getDistance(closestSegment.mtxLocal.translation, child.mtxLocal.translation)) {
-                        closestSegment = value;
-                        closestSegmentDistance = valueSegmentDistance;
+                //averageSegmentDistance= this.getAverageDistance(segInAwarenesArea, child.mtxLocal);
+                segInAwarenesArea.forEach((value)=>{
+                    if(closestSegmentDistance== null){
+                        closestSegmentDistance= this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
+                    } else if(this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < closestSegmentDistance){
+                        closestSegmentDistance= this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
                     }
                 });
-            }
-
+            } 
+            console.log(closestSegmentDistance);
     
                 let goRightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
                 goRightPos.rotate(ƒ.Vector3.Y(-90))
@@ -57,10 +55,14 @@ namespace Snake3D {
                 let goStreightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
                 goStreightPos.translate(this.dirCurrent);
 
-                if (closestSegment!=null && closestSegmentDistance < 3) {
-                    let goRightDist = this.getDistance(closestSegment.mtxLocal.translation, goRightPos.translation);
-                    let goLeftDist = this.getDistance(closestSegment.mtxLocal.translation, goLeftPos.translation);
-                    let goStreightDist = this.getDistance(closestSegment.mtxLocal.translation, goStreightPos.translation);
+                if (closestSegmentDistance!=null && closestSegmentDistance < 2.5) {
+                    // let goRightDist = this.getDistance(closestSegment.mtxLocal.translation, goRightPos.translation);
+                    // let goLeftDist = this.getDistance(closestSegment.mtxLocal.translation, goLeftPos.translation);
+                    // let goStreightDist = this.getDistance(closestSegment.mtxLocal.translation, goStreightPos.translation);
+
+                    let goRightDist= this.getAverageDistance(segInAwarenesArea, goRightPos);
+                    let goLeftDist= this.getAverageDistance(segInAwarenesArea, goLeftPos);
+                    let goStreightDist= this.getAverageDistance(segInAwarenesArea, goStreightPos);
 
                     if (goRightDist >= goLeftDist && goRightDist > goStreightDist) {
                         this.rotate(ƒ.Vector3.Y(-90));
@@ -85,7 +87,7 @@ namespace Snake3D {
             while (true) {
                 mtxHead = cmpPrev.local.copy;
                 mtxHead.translate(this.dirCurrent);
-                if (Math.abs(mtxHead.translation.x) < 14 && Math.abs(mtxHead.translation.y) < 14 && Math.abs(mtxHead.translation.z) < 14)
+                if (Math.abs(mtxHead.translation.x) < size+1 && Math.abs(mtxHead.translation.y) < size+1 && Math.abs(mtxHead.translation.z) < size+1)
                     break;
                 this.rotate(ƒ.Vector3.Z(-90));
             }
@@ -129,5 +131,12 @@ namespace Snake3D {
             return Math.sqrt((xval * xval) + (yval * yval) + (zval * zval));
         }
 
+        private getAverageDistance(_array: Array<ƒ.Node>, _local: ƒ.Matrix4x4): number{
+            let addedValue= 0;
+            _array.forEach((value)=>{
+                addedValue+= this.getDistance(value.mtxLocal.translation, _local.translation)
+            });
+            return addedValue/ _array.length;
+        }
     }
 }

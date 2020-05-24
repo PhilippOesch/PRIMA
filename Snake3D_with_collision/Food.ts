@@ -6,7 +6,7 @@ namespace Snake3D {
 
         constructor() {
             super("Food");
-            this.init(13);
+            this.init(size);
             this.collisionSphere= new CollisionSphere(this);
         }
 
