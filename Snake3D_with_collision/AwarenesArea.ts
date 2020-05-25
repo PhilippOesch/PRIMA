@@ -14,7 +14,6 @@ namespace Snake3D {
         public isColliding(_inputObject: ƒ.Node): boolean {
 
             let snakeHeadPos: ƒ.Vector3 =  this.parentnode.cmpTransform.local.translation;
-            console.log(snakeHeadPos)
             let snakeHeadScale: number =  this.size;
             let inputPos: ƒ.Vector3 = _inputObject.mtxLocal.translation;
             let inputScale: ƒ.Vector3 = _inputObject.getComponent(ƒ.ComponentMesh).pivot.scaling.copy;

@@ -6,7 +6,7 @@ namespace Snake3D {
   window.addEventListener("load", hndLoad);
   export let viewport: ƒ.Viewport;
   export let graph: ƒ.Node;
-  export let size: number = 20;
+  export let size: number = 10;
   let food: ƒ.Node;
   let snake: Snake;
   let aISnake: AISnake;

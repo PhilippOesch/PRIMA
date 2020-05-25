@@ -9,16 +9,14 @@ namespace Snake3D {
         constructor() {
             var material = new ƒ.Material("AISnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("Orange")));
             super("AISnake", material)
-            this.awarenessArea = new AwarenesArea(15, this.head);
+            this.awarenessArea = new AwarenesArea(20, this.head);
         }
 
         public move() {
             //get food Objects inside detection Area
             let inAwarenesArea: Array<ƒ.Node> = this.getFoodInArea();
-            let segInAwarenesArea: Array<ƒ.Node> = this.getSegmentsInArea();
             let closest: ƒ.Node = null
             let child: ƒ.Node = this.head;
-            let closestSegmentDistance: number= null;
 
             //get nearest Food Object
             if (inAwarenesArea != undefined) {
@@ -32,62 +30,102 @@ namespace Snake3D {
             }
 
 
-            if (segInAwarenesArea != undefined) {
-                //averageSegmentDistance= this.getAverageDistance(segInAwarenesArea, child.mtxLocal);
-                segInAwarenesArea.forEach((value)=>{
-                    if(closestSegmentDistance== null){
-                        closestSegmentDistance= this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
-                    } else if(this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation) < closestSegmentDistance){
-                        closestSegmentDistance= this.getDistance(value.mtxLocal.translation, child.mtxLocal.translation);
+            let goRightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
+            goRightPos.rotate(ƒ.Vector3.Y(-90))
+            goRightPos.translate(this.dirCurrent);
+
+            let goLeftPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
+            goLeftPos.rotate(ƒ.Vector3.Y(90))
+            goLeftPos.translate(this.dirCurrent);
+
+            let goStreightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
+            goStreightPos.translate(this.dirCurrent);
+
+            //Check Collision in new Pos
+            let goRightCollision= this.isCollidingwithItself(goRightPos.translation);
+            let goLeftCollision= this.isCollidingwithItself(goLeftPos.translation);
+            let goStreightCollision= this.isCollidingwithItself(goStreightPos.translation);
+
+            let direction: string= "";
+
+            if (closest != null) {
+
+                // let goRightDist: number = this.getDistance(closest.mtxLocal.translation, goRightPos.translation);
+                // let goLeftDist: number = this.getDistance(closest.mtxLocal.translation, goLeftPos.translation);
+                // let goStreightDist: number = this.getDistance(closest.mtxLocal.translation, goStreightPos.translation);
+
+                let sorted: Array<ƒ.Vector3>= Array(goRightPos.translation, goLeftPos.translation, goStreightPos.translation);
+            
+                sorted.sort((a, b)=> {
+                    let aDistance= this.getDistance(closest.mtxLocal.translation, a);
+                    let bDistance= this.getDistance(closest.mtxLocal.translation, b);
+
+                    if(aDistance<= bDistance){
+                        return -1;
                     }
-                });
-            } 
-            console.log(closestSegmentDistance);
-    
-                let goRightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
-                goRightPos.rotate(ƒ.Vector3.Y(-90))
-                goRightPos.translate(this.dirCurrent);
-
-                let goLeftPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
-                goLeftPos.rotate(ƒ.Vector3.Y(90))
-                goLeftPos.translate(this.dirCurrent);
-
-                let goStreightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
-                goStreightPos.translate(this.dirCurrent);
-
-                if (closestSegmentDistance!=null && closestSegmentDistance < 2.5) {
-                    // let goRightDist = this.getDistance(closestSegment.mtxLocal.translation, goRightPos.translation);
-                    // let goLeftDist = this.getDistance(closestSegment.mtxLocal.translation, goLeftPos.translation);
-                    // let goStreightDist = this.getDistance(closestSegment.mtxLocal.translation, goStreightPos.translation);
-
-                    let goRightDist= this.getAverageDistance(segInAwarenesArea, goRightPos);
-                    let goLeftDist= this.getAverageDistance(segInAwarenesArea, goLeftPos);
-                    let goStreightDist= this.getAverageDistance(segInAwarenesArea, goStreightPos);
-
-                    if (goRightDist >= goLeftDist && goRightDist > goStreightDist) {
-                        this.rotate(ƒ.Vector3.Y(-90));
-                    } else if (goLeftDist > goRightDist && goLeftDist > goStreightDist) {
-                        this.rotate(ƒ.Vector3.Y(90));
+                    if(aDistance> bDistance){
+                        return 1;
                     }
-                } else if(closest != null) {
 
-                    let goRightDist = this.getDistance(closest.mtxLocal.translation, goRightPos.translation);
-                    let goLeftDist = this.getDistance(closest.mtxLocal.translation, goLeftPos.translation);
-                    let goStreightDist = this.getDistance(closest.mtxLocal.translation, goStreightPos.translation);
+                    return 0;
+                })
 
-                    if (goRightDist <= goLeftDist && goRightDist < goStreightDist) {
-                        this.rotate(ƒ.Vector3.Y(-90));
-                    } else if (goLeftDist < goRightDist && goLeftDist < goStreightDist) {
-                        this.rotate(ƒ.Vector3.Y(90));
-                    }
+                console.dir(sorted);
+
+                //checking for collision with itself
+                if((sorted[0].equals(goStreightPos.translation) && !goStreightCollision)){
+                    direction= "streight";
+                } else if((sorted[0].equals(goRightPos.translation) && !goRightCollision)){
+                    direction= "right";
+                } else if((sorted[0].equals(goLeftPos.translation) && !goLeftCollision)){
+                    direction= "left";
+                } else if((sorted[1].equals(goStreightPos.translation) && !goStreightCollision)){
+                    direction= "streight";
+                } else if((sorted[1].equals(goRightPos.translation) && !goRightCollision)){
+                    direction= "right";
+                } else if((sorted[1].equals(goLeftPos.translation) && !goLeftCollision)){
+                    direction= "left";
+                } else if((sorted[2].equals(goStreightPos.translation) && !goStreightCollision)){
+                    direction= "streight";
+                } else if((sorted[2].equals(goRightPos.translation) && !goRightCollision)){
+                    direction= "right";
+                } else if((sorted[2].equals(goLeftPos.translation) && !goLeftCollision)){
+                    direction= "left";
                 }
-        
+
+                //just selecting way to closest food
+                // if(sorted[0].equals(goStreightPos.translation)){
+                //     direction= "streight";
+                // } else if(sorted[0].equals(goLeftPos.translation)){
+                //     direction= "left";
+                // } else if(sorted[0].equals(goRightPos.translation)){
+                //     direction= "right";
+                // }
+                
+            } else {
+                if(!goStreightCollision){
+                    direction= "streight";
+                } else if(!goLeftCollision){
+                    direction= "left";
+                } else if(!goRightCollision){
+                    direction= "right";
+                }
+            }
+
+            if(direction== "right"){
+                this.rotate(ƒ.Vector3.Y(-90));
+            }
+            if(direction== "left"){
+                this.rotate(ƒ.Vector3.Y(90));
+            }
+
             let cmpPrev: ƒ.ComponentTransform = child.getComponent(ƒ.ComponentTransform);
             let mtxHead: ƒ.Matrix4x4;
+
             while (true) {
                 mtxHead = cmpPrev.local.copy;
                 mtxHead.translate(this.dirCurrent);
-                if (Math.abs(mtxHead.translation.x) < size+1 && Math.abs(mtxHead.translation.y) < size+1 && Math.abs(mtxHead.translation.z) < size+1)
+                if (Math.abs(mtxHead.translation.x) < size + 1 && Math.abs(mtxHead.translation.y) < size + 1 && Math.abs(mtxHead.translation.z) < size + 1)
                     break;
                 this.rotate(ƒ.Vector3.Z(-90));
             }
@@ -113,16 +151,6 @@ namespace Snake3D {
             return objectsInArea;
         }
 
-        private getSegmentsInArea(): Array<ƒ.Node> {
-            let objectsInArea: Array<ƒ.Node> = new Array<ƒ.Node>();
-            this.getChildren().forEach((value, index) => {
-                if (this.awarenessArea.isColliding(value) && index > 3) {
-                    objectsInArea.push(value);
-                }
-            });
-            return objectsInArea;
-        }
-
         private getDistance(_input1: ƒ.Vector3, _input2: ƒ.Vector3): number {
             let xval: number = Math.abs(_input1.x - _input2.x);
             let yval: number = Math.abs(_input1.y - _input2.y);
@@ -131,12 +159,15 @@ namespace Snake3D {
             return Math.sqrt((xval * xval) + (yval * yval) + (zval * zval));
         }
 
-        private getAverageDistance(_array: Array<ƒ.Node>, _local: ƒ.Matrix4x4): number{
-            let addedValue= 0;
-            _array.forEach((value)=>{
-                addedValue+= this.getDistance(value.mtxLocal.translation, _local.translation)
+        public isCollidingwithItself(_input: ƒ.Vector3){
+            let checkcollision= false;
+            this.getChildren().forEach((value, index)=>{
+                if(index>2 && value.mtxLocal.translation.isInsideSphere(_input, 0.4)){
+                    checkcollision= true;
+                    return;
+                } 
             });
-            return addedValue/ _array.length;
+            return checkcollision;
         }
     }
 }
