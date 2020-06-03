@@ -10,14 +10,14 @@ namespace Snake3D {
     protected mesh: ƒ.MeshCube;
     protected material: ƒ.Material;
 
-    constructor(_name: string, _material: ƒ.Material= new ƒ.Material("SnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")))) {
+    constructor(_name: string, _material: ƒ.Material = new ƒ.Material("SnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("WHITE")))) {
       super(_name);
       console.log("Creating Snake");
       this.mesh = new ƒ.MeshCube();
-      this.material= _material
+      this.material = _material;
       this.grow(4);
       this.head = this.getChild(0);
-      this.collisionSphere= new CollisionSphere(this.head);
+      this.collisionSphere = new CollisionSphere(this.head);
     }
 
     public move(): void {
@@ -28,7 +28,7 @@ namespace Snake3D {
       while (true) {
         mtxHead = cmpPrev.local.copy;
         mtxHead.translate(this.dirCurrent);
-        if (Math.abs(mtxHead.translation.x) < size+1 && Math.abs(mtxHead.translation.y) < size+1 && Math.abs(mtxHead.translation.z) < size+1)
+        if (Math.abs(mtxHead.translation.x) < size + 1 && Math.abs(mtxHead.translation.y) < size + 1 && Math.abs(mtxHead.translation.z) < size + 1)
           break;
         this.rotate(ƒ.Vector3.Z(-90));
       }

@@ -9,7 +9,7 @@ namespace Snake3D {
         constructor() {
             var material = new ƒ.Material("AISnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("Orange")));
             super("AISnake", material)
-            this.awarenessArea = new AwarenesArea(20, this.head);
+            this.awarenessArea = new AwarenesArea(14, this.head);
         }
 
         public move() {
@@ -33,20 +33,26 @@ namespace Snake3D {
             let goRightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
             goRightPos.rotate(ƒ.Vector3.Y(-90))
             goRightPos.translate(this.dirCurrent);
+            if (!(Math.abs(goRightPos.translation.x) < size + 1 && Math.abs(goRightPos.translation.y) < size + 1 && Math.abs(goRightPos.translation.z) < size + 1))
+                goRightPos.rotate(ƒ.Vector3.Z(-90));
 
             let goLeftPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
             goLeftPos.rotate(ƒ.Vector3.Y(90))
             goLeftPos.translate(this.dirCurrent);
+            if (!(Math.abs(goLeftPos.translation.x) < size + 1 && Math.abs(goLeftPos.translation.y) < size + 1 && Math.abs(goLeftPos.translation.z) < size + 1))
+                goLeftPos.rotate(ƒ.Vector3.Z(-90));
 
             let goStreightPos: ƒ.Matrix4x4 = child.mtxLocal.copy;
             goStreightPos.translate(this.dirCurrent);
+            if (!(Math.abs(goStreightPos.translation.x) < size + 1 && Math.abs(goStreightPos.translation.y) < size + 1 && Math.abs(goStreightPos.translation.z) < size + 1))
+                goStreightPos.rotate(ƒ.Vector3.Z(-90));
 
             //Check Collision in new Pos
-            let goRightCollision= this.isCollidingwithItself(goRightPos.translation);
-            let goLeftCollision= this.isCollidingwithItself(goLeftPos.translation);
-            let goStreightCollision= this.isCollidingwithItself(goStreightPos.translation);
+            let goRightCollision = this.isCollidingwithItself(goRightPos.translation);
+            let goLeftCollision = this.isCollidingwithItself(goLeftPos.translation);
+            let goStreightCollision = this.isCollidingwithItself(goStreightPos.translation);
 
-            let direction: string= "";
+            let direction: string = "";
 
             if (closest != null) {
 
@@ -54,43 +60,36 @@ namespace Snake3D {
                 // let goLeftDist: number = this.getDistance(closest.mtxLocal.translation, goLeftPos.translation);
                 // let goStreightDist: number = this.getDistance(closest.mtxLocal.translation, goStreightPos.translation);
 
-                let sorted: Array<ƒ.Vector3>= Array(goRightPos.translation, goLeftPos.translation, goStreightPos.translation);
-            
-                sorted.sort((a, b)=> {
-                    let aDistance= this.getDistance(closest.mtxLocal.translation, a);
-                    let bDistance= this.getDistance(closest.mtxLocal.translation, b);
+                let sorted: Array<ƒ.Vector3> = Array(goRightPos.translation, goLeftPos.translation, goStreightPos.translation);
 
-                    if(aDistance<= bDistance){
+                sorted.sort((a, b) => {
+                    let aDistance = this.getDistance(closest.mtxLocal.translation, a);
+                    let bDistance = this.getDistance(closest.mtxLocal.translation, b);
+
+                    if (aDistance < bDistance) {
                         return -1;
                     }
-                    if(aDistance> bDistance){
+                    if (aDistance > bDistance) {
                         return 1;
                     }
 
-                    return 0;
+                    return 1;
                 })
 
                 console.dir(sorted);
 
-                //checking for collision with itself
-                if((sorted[0].equals(goStreightPos.translation) && !goStreightCollision)){
-                    direction= "streight";
-                } else if((sorted[0].equals(goRightPos.translation) && !goRightCollision)){
-                    direction= "right";
-                } else if((sorted[0].equals(goLeftPos.translation) && !goLeftCollision)){
-                    direction= "left";
-                } else if((sorted[1].equals(goStreightPos.translation) && !goStreightCollision)){
-                    direction= "streight";
-                } else if((sorted[1].equals(goRightPos.translation) && !goRightCollision)){
-                    direction= "right";
-                } else if((sorted[1].equals(goLeftPos.translation) && !goLeftCollision)){
-                    direction= "left";
-                } else if((sorted[2].equals(goStreightPos.translation) && !goStreightCollision)){
-                    direction= "streight";
-                } else if((sorted[2].equals(goRightPos.translation) && !goRightCollision)){
-                    direction= "right";
-                } else if((sorted[2].equals(goLeftPos.translation) && !goLeftCollision)){
-                    direction= "left";
+                for (let value of sorted) {
+                    if ((value.equals(goStreightPos.translation) && !goStreightCollision)) {
+                        direction = "streight";
+                    } else if ((value.equals(goRightPos.translation) && !goRightCollision)) {
+                        direction = "right";
+                    } else if ((value.equals(goLeftPos.translation) && !goLeftCollision)) {
+                        direction = "left";
+                    }
+
+                    if (direction !== "") {
+                        break;
+                    }
                 }
 
                 //just selecting way to closest food
@@ -101,21 +100,21 @@ namespace Snake3D {
                 // } else if(sorted[0].equals(goRightPos.translation)){
                 //     direction= "right";
                 // }
-                
+
             } else {
-                if(!goStreightCollision){
-                    direction= "streight";
-                } else if(!goLeftCollision){
-                    direction= "left";
-                } else if(!goRightCollision){
-                    direction= "right";
+                if (!goStreightCollision) {
+                    direction = "streight";
+                } else if (!goLeftCollision) {
+                    direction = "left";
+                } else if (!goRightCollision) {
+                    direction = "right";
                 }
             }
 
-            if(direction== "right"){
+            if (direction == "right") {
                 this.rotate(ƒ.Vector3.Y(-90));
             }
-            if(direction== "left"){
+            if (direction == "left") {
                 this.rotate(ƒ.Vector3.Y(90));
             }
 
@@ -159,13 +158,13 @@ namespace Snake3D {
             return Math.sqrt((xval * xval) + (yval * yval) + (zval * zval));
         }
 
-        public isCollidingwithItself(_input: ƒ.Vector3){
-            let checkcollision= false;
-            this.getChildren().forEach((value, index)=>{
-                if(index>2 && value.mtxLocal.translation.isInsideSphere(_input, 0.4)){
-                    checkcollision= true;
+        public isCollidingwithItself(_input: ƒ.Vector3) {
+            let checkcollision = false;
+            this.getChildren().forEach((value, index) => {
+                if (index > 2 && value.mtxLocal.translation.isInsideSphere(_input, 0.4)) {
+                    checkcollision = true;
                     return;
-                } 
+                }
             });
             return checkcollision;
         }

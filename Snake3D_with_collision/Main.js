@@ -76,7 +76,7 @@ var Snake3D;
         constructor() {
             var material = new ƒ.Material("AISnakeMaterial", ƒ.ShaderFlat, new ƒ.CoatColored(ƒ.Color.CSS("Orange")));
             super("AISnake", material);
-            this.awarenessArea = new Snake3D.AwarenesArea(20, this.head);
+            this.awarenessArea = new Snake3D.AwarenesArea(14, this.head);
         }
         move() {
             //get food Objects inside detection Area
@@ -97,11 +97,17 @@ var Snake3D;
             let goRightPos = child.mtxLocal.copy;
             goRightPos.rotate(ƒ.Vector3.Y(-90));
             goRightPos.translate(this.dirCurrent);
+            if (!(Math.abs(goRightPos.translation.x) < Snake3D.size + 1 && Math.abs(goRightPos.translation.y) < Snake3D.size + 1 && Math.abs(goRightPos.translation.z) < Snake3D.size + 1))
+                goRightPos.rotate(ƒ.Vector3.Z(-90));
             let goLeftPos = child.mtxLocal.copy;
             goLeftPos.rotate(ƒ.Vector3.Y(90));
             goLeftPos.translate(this.dirCurrent);
+            if (!(Math.abs(goLeftPos.translation.x) < Snake3D.size + 1 && Math.abs(goLeftPos.translation.y) < Snake3D.size + 1 && Math.abs(goLeftPos.translation.z) < Snake3D.size + 1))
+                goLeftPos.rotate(ƒ.Vector3.Z(-90));
             let goStreightPos = child.mtxLocal.copy;
             goStreightPos.translate(this.dirCurrent);
+            if (!(Math.abs(goStreightPos.translation.x) < Snake3D.size + 1 && Math.abs(goStreightPos.translation.y) < Snake3D.size + 1 && Math.abs(goStreightPos.translation.z) < Snake3D.size + 1))
+                goStreightPos.rotate(ƒ.Vector3.Z(-90));
             //Check Collision in new Pos
             let goRightCollision = this.isCollidingwithItself(goRightPos.translation);
             let goLeftCollision = this.isCollidingwithItself(goLeftPos.translation);
@@ -115,42 +121,28 @@ var Snake3D;
                 sorted.sort((a, b) => {
                     let aDistance = this.getDistance(closest.mtxLocal.translation, a);
                     let bDistance = this.getDistance(closest.mtxLocal.translation, b);
-                    if (aDistance <= bDistance) {
+                    if (aDistance < bDistance) {
                         return -1;
                     }
                     if (aDistance > bDistance) {
                         return 1;
                     }
-                    return 0;
+                    return 1;
                 });
                 console.dir(sorted);
-                //checking for collision with itself
-                if ((sorted[0].equals(goStreightPos.translation) && !goStreightCollision)) {
-                    direction = "streight";
-                }
-                else if ((sorted[0].equals(goRightPos.translation) && !goRightCollision)) {
-                    direction = "right";
-                }
-                else if ((sorted[0].equals(goLeftPos.translation) && !goLeftCollision)) {
-                    direction = "left";
-                }
-                else if ((sorted[1].equals(goStreightPos.translation) && !goStreightCollision)) {
-                    direction = "streight";
-                }
-                else if ((sorted[1].equals(goRightPos.translation) && !goRightCollision)) {
-                    direction = "right";
-                }
-                else if ((sorted[1].equals(goLeftPos.translation) && !goLeftCollision)) {
-                    direction = "left";
-                }
-                else if ((sorted[2].equals(goStreightPos.translation) && !goStreightCollision)) {
-                    direction = "streight";
-                }
-                else if ((sorted[2].equals(goRightPos.translation) && !goRightCollision)) {
-                    direction = "right";
-                }
-                else if ((sorted[2].equals(goLeftPos.translation) && !goLeftCollision)) {
-                    direction = "left";
+                for (let value of sorted) {
+                    if ((value.equals(goStreightPos.translation) && !goStreightCollision)) {
+                        direction = "streight";
+                    }
+                    else if ((value.equals(goRightPos.translation) && !goRightCollision)) {
+                        direction = "right";
+                    }
+                    else if ((value.equals(goLeftPos.translation) && !goLeftCollision)) {
+                        direction = "left";
+                    }
+                    if (direction !== "") {
+                        break;
+                    }
                 }
                 //just selecting way to closest food
                 // if(sorted[0].equals(goStreightPos.translation)){
