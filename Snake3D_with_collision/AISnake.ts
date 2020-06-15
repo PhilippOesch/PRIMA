@@ -1,3 +1,4 @@
+/// <reference path="../FudgeCore/FudgeCore.d.ts"/>
 /// <reference path="Snake.ts"/>
 
 namespace Snake3D {

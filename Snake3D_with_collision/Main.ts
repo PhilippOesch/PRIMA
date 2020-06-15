@@ -1,3 +1,5 @@
+/// <reference path="Food.ts"/>
+
 namespace Snake3D {
   import ƒ = FudgeCore;
 
