@@ -27,33 +27,41 @@ namespace TowerDefense{
             let mtr: ƒ.Material= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)));
 
             let base: ƒ.Node= new ƒ.Node("Tower Base");
-            base.addComponent(new ƒ.ComponentMesh(meshCube));
+            let baseMeshCmp: ƒ.ComponentMesh= new ƒ.ComponentMesh(meshCube)
+            baseMeshCmp.pivot.scale(new ƒ.Vector3(4, 0.5, 4))
+            base.addComponent(baseMeshCmp);
             base.addComponent(new ƒ.ComponentMaterial(mtr));
-            let baseTransformation= new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(4, 0.5, 4)));
+            let baseTransformation= new ƒ.ComponentTransform();
             base.addComponent(baseTransformation);
             this.appendChild(base);
 
             let body: ƒ.Node= new ƒ.Node("Tower Body");
-            body.addComponent(new ƒ.ComponentMesh(meshCube));
+            let bodyMeshCmp: ƒ.ComponentMesh= new ƒ.ComponentMesh(meshCube)
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2))
+            body.addComponent(bodyMeshCmp);
             body.addComponent(new ƒ.ComponentMaterial(mtr));
-            let bodyTransformation= new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(2, 2, 2)));
+            let bodyTransformation= new ƒ.ComponentTransform();
             bodyTransformation.local.translate(ƒ.Vector3.Y(0.5));
             body.addComponent(bodyTransformation);
             this.appendChild(body);
 
             let cannon: ƒ.Node= new ƒ.Node("Tower Cannon");
-            cannon.addComponent(new ƒ.ComponentMesh(meshSphere));
+            let cannonMeshCmp: ƒ.ComponentMesh= new ƒ.ComponentMesh(meshSphere);
+            cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
+            cannon.addComponent(cannonMeshCmp);
             cannon.addComponent(new ƒ.ComponentMaterial(mtr));
-            let cannonTransformation= new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(ƒ.Vector3.ONE(2)));
-            cannonTransformation.local.translate(ƒ.Vector3.Y(1.3));
+            let cannonTransformation= new ƒ.ComponentTransform();
+            cannonTransformation.local.translateY(3.3, false);
             cannon.addComponent(cannonTransformation);
             this.appendChild(cannon);
 
             let cannonBarrel: ƒ.Node= new ƒ.Node("Canon Barrel");
-            cannonBarrel.addComponent(new ƒ.ComponentMesh(meshCube));
+            let cannonBarrelMeshCmp= new ƒ.ComponentMesh(meshCube)
+            cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
+            cannonBarrel.addComponent(cannonBarrelMeshCmp);
             cannonBarrel.addComponent(new ƒ.ComponentMaterial(mtr));
-            let cannonBarrelTransformation= new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(0.2, 0.2, 1.0)));
-            cannonBarrelTransformation.local.translateZ(0.5);
+            let cannonBarrelTransformation= new ƒ.ComponentTransform();
+            cannonBarrelTransformation.local.translateZ(1);
             cannonBarrel.addComponent(cannonBarrelTransformation);
             cannon.appendChild(cannonBarrel);
 
@@ -72,11 +80,13 @@ namespace TowerDefense{
 
         fireProjectile = () => {
             let enemyPos: ƒ.Matrix4x4= enemy.cmpTransform.local.copy;
-            let startingPos: ƒ.Matrix4x4= this.cmpTransform.local.copy;
+            let startingPos: ƒ.Matrix4x4= this.getChildrenByName("Tower Cannon")[0].cmpTransform.local.copy;
+            startingPos.translateY(1, false)
+            console.log(startingPos.translation);
             let direction: ƒ.Vector3= startingPos.getTranslationTo(enemyPos);
             direction.normalize();
 
-            let newProjectile= new Projectile(this.position, direction)
+            let newProjectile= new Projectile(startingPos.translation.copy, direction)
             graph.appendChild(newProjectile);
         }
     }

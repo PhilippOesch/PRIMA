@@ -24,11 +24,12 @@ namespace TowerDefense{
             let mesh: ƒ.MeshSphere= new ƒ.MeshSphere();
             let mtrPlayfield: ƒ.Material= new ƒ.Material("projectileMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
 
-            this.addComponent(new ƒ.ComponentMesh(mesh));
+            let meshCmp: ƒ.ComponentMesh= new ƒ.ComponentMesh(mesh)
+            meshCmp.pivot.scale(ƒ.Vector3.ONE(0.3))
+            this.addComponent(meshCmp);
             this.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
 
-            let transformationComponent= new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(0.5, 0.5, 0.5)));
-            transformationComponent.local.translate(this.startingposition);
+            let transformationComponent: ƒ.ComponentTransform= new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingposition));
             this.addComponent(transformationComponent);
 
             graph.appendChild(this);
