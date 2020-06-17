@@ -22,6 +22,8 @@ var TowerDefense;
             console.log(this.health);
             if (this.health <= 0) {
                 TowerDefense.viewport.getGraph().removeChild(this);
+                TowerDefense.enemy = new Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
+                TowerDefense.viewport.getGraph().appendChild(TowerDefense.enemy);
             }
         }
         init() {
@@ -58,23 +60,28 @@ var TowerDefense;
     var ƒAid = FudgeAid;
     ƒ.RenderManager.initialize(true, false);
     window.addEventListener("load", hndLoad);
-    let tower;
+    let gridX = 15;
+    let gridZ = 10;
+    let gridBlockSize = 4;
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
-        TowerDefense.graph = new ƒ.Node("Game");
-        createField();
-        TowerDefense.enemy = new TowerDefense.Enemy(new ƒ.Vector3(-14.5, 1, 5), ƒ.Vector3.X(), 0.1);
-        tower = new TowerDefense.Tower(new ƒ.Vector3(0, 1, 0));
-        TowerDefense.graph.appendChild(TowerDefense.enemy);
-        TowerDefense.graph.appendChild(tower);
-        ƒAid.addStandardLightComponents(TowerDefense.graph, new ƒ.Color(0.6, 0.6, 0.6));
+        let graph = new ƒ.Node("Game");
+        initGrid();
+        createField(graph);
+        TowerDefense.enemy = new TowerDefense.Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
+        let tower1 = new TowerDefense.Tower(TowerDefense.grid[4][3]);
+        let tower2 = new TowerDefense.Tower(TowerDefense.grid[4][4]);
+        graph.appendChild(TowerDefense.enemy);
+        graph.appendChild(tower1);
+        graph.appendChild(tower2);
+        ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, 30, 1));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, gridBlockSize * gridX * 1.3, 1));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
         TowerDefense.viewport = new ƒ.Viewport();
-        TowerDefense.viewport.initialize("Viewport", TowerDefense.graph, cmpCamera, canvas);
+        TowerDefense.viewport.initialize("Viewport", graph, cmpCamera, canvas);
         ƒ.Debug.log(TowerDefense.viewport);
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 30);
@@ -82,14 +89,25 @@ var TowerDefense;
     function update(_event) {
         TowerDefense.viewport.draw();
     }
-    function createField() {
+    function createField(_graph) {
         let mesh = new ƒ.MeshCube();
         let mtrPlayfield = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.4, 0)));
         let field = new ƒ.Node("playfield");
         field.addComponent(new ƒ.ComponentMesh(mesh));
         field.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
-        field.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(40, 1, 20))));
-        TowerDefense.graph.addChild(field);
+        field.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(gridBlockSize * gridX, 1, gridBlockSize * gridZ))));
+        _graph.addChild(field);
+    }
+    function initGrid() {
+        TowerDefense.grid = [];
+        let startLeft = (gridBlockSize / 2) - (gridX * gridBlockSize / 2);
+        let startTop = (gridZ * gridBlockSize / 2) - (gridBlockSize / 2);
+        for (let z = 0; z < gridZ; z++) {
+            TowerDefense.grid[z] = [];
+            for (let x = 0; x < gridX; x++) {
+                TowerDefense.grid[z][x] = new ƒ.Vector3((startLeft + (gridBlockSize * x)), 1, (startTop - (gridBlockSize * z)));
+            }
+        }
     }
 })(TowerDefense || (TowerDefense = {}));
 var TowerDefense;
@@ -140,7 +158,7 @@ var TowerDefense;
             this.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
             let transformationComponent = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingposition));
             this.addComponent(transformationComponent);
-            TowerDefense.graph.appendChild(this);
+            TowerDefense.viewport.getGraph().appendChild(this);
         }
     }
     TowerDefense.Projectile = Projectile;
@@ -155,12 +173,11 @@ var TowerDefense;
             super("Tower");
             this.rate = 1000; //in ms
             this.isShooting = false;
-            this.range = 10;
+            this.range = 12;
             this.fireProjectile = () => {
-                let startingPos = this.getChildrenByName("Tower Cannon")[0].cmpTransform.local.copy;
-                startingPos.translateY(1, false);
+                let startingPos = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
                 let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, TowerDefense.enemy);
-                TowerDefense.graph.appendChild(newProjectile);
+                TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
             this.position = _pos;
             this.init();
@@ -174,8 +191,9 @@ var TowerDefense;
                 let distanceSquared = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, enemy.mtxWorld.translation).magnitudeSquared;
                 // console.log("Squared Distanze is:" + distanceSquared);
                 if (distanceSquared < (this.range * this.range)) {
-                    let enemyPos = enemy.cmpTransform.local.translation.copy;
+                    let enemyPos = enemy.mtxWorld.translation.copy;
                     let cannon = this.getChildrenByName("Tower Cannon")[0];
+                    enemyPos.subtract(cannon.mtxWorld.translation); //Adjust Direction to point at the right pos
                     if (cannon != null) {
                         cannon.cmpTransform.local.lookAt(enemyPos, ƒ.Vector3.Y());
                     }

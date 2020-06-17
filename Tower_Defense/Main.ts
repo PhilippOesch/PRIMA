@@ -7,27 +7,33 @@ namespace TowerDefense {
     window.addEventListener("load", hndLoad);
 
     export let viewport: ƒ.Viewport;
-    export let graph: ƒ.Node;
     export let enemy: Enemy;
+    export let grid: ƒ.Vector3[][];
+    let gridX: number = 15;
+    let gridZ: number = 10;
+    let gridBlockSize: number = 4;
 
-    let tower: Tower;
 
     function hndLoad(_event: Event): void {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
 
-        graph = new ƒ.Node("Game");
-        createField();
+        let graph: ƒ.Node = new ƒ.Node("Game");
 
-        enemy = new Enemy(new ƒ.Vector3(-14.5, 1, 5), ƒ.Vector3.X(), 0.1);
-        tower = new Tower(new ƒ.Vector3(0, 1, 0));
+        initGrid();
+        createField(graph);
+
+        enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
+        let tower1: Tower = new Tower(grid[4][3]);
+        let tower2: Tower = new Tower(grid[4][4]);
         graph.appendChild(enemy);
-        graph.appendChild(tower);
+        graph.appendChild(tower1);
+        graph.appendChild(tower2);
 
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, 30, 1));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, gridBlockSize * gridX * 1.3, 1));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
 
@@ -43,15 +49,28 @@ namespace TowerDefense {
         viewport.draw();
     }
 
-    function createField(): void {
+    function createField(_graph: ƒ.Node): void {
         let mesh: ƒ.MeshCube = new ƒ.MeshCube();
         let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.4, 0)));
 
         let field: ƒ.Node = new ƒ.Node("playfield");
         field.addComponent(new ƒ.ComponentMesh(mesh));
         field.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
-        field.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(40, 1, 20))));
+        field.addComponent(new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(gridBlockSize * gridX, 1, gridBlockSize * gridZ))));
 
-        graph.addChild(field);
+        _graph.addChild(field);
+    }
+
+    function initGrid(): void {
+        grid = [];
+        let startLeft: number = (gridBlockSize / 2) - (gridX * gridBlockSize / 2);
+        let startTop: number = (gridZ * gridBlockSize / 2) - (gridBlockSize / 2);
+
+        for (let z = 0; z < gridZ; z++) {
+            grid[z] = [];
+            for (let x = 0; x < gridX; x++) {
+                grid[z][x] = new ƒ.Vector3((startLeft + (gridBlockSize * x)), 1, (startTop - (gridBlockSize * z)));
+            }
+        }
     }
 }

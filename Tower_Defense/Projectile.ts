@@ -58,7 +58,7 @@ namespace TowerDefense {
             let transformationComponent: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingposition));
             this.addComponent(transformationComponent);
 
-            graph.appendChild(this);
+            viewport.getGraph().appendChild(this);
         }
     }
 }

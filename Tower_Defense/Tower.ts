@@ -8,7 +8,7 @@ namespace TowerDefense {
         private rate: number = 1000; //in ms
         private shootingInterval: number;
         private isShooting: boolean = false;
-        private range: number = 10;
+        private range: number = 12;
 
         constructor(_pos: ƒ.Vector3) {
             super("Tower");
@@ -27,8 +27,9 @@ namespace TowerDefense {
                 let distanceSquared: number = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, enemy.mtxWorld.translation).magnitudeSquared;
                 // console.log("Squared Distanze is:" + distanceSquared);
                 if (distanceSquared < (this.range * this.range)) {
-                    let enemyPos: ƒ.Vector3 = enemy.cmpTransform.local.translation.copy;
+                    let enemyPos: ƒ.Vector3 = enemy.mtxWorld.translation.copy;
                     let cannon: ƒ.Node = this.getChildrenByName("Tower Cannon")[0];
+                    enemyPos.subtract(cannon.mtxWorld.translation); //Adjust Direction to point at the right pos
                     if (cannon != null) {
                         cannon.cmpTransform.local.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
@@ -50,11 +51,10 @@ namespace TowerDefense {
         }
 
         private fireProjectile = (): void => {
-            let startingPos: ƒ.Matrix4x4 = this.getChildrenByName("Tower Cannon")[0].cmpTransform.local.copy;
-            startingPos.translateY(1, false);
+            let startingPos: ƒ.Matrix4x4 = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
 
             let newProjectile: Projectile = new Projectile(startingPos.translation.copy, enemy);
-            graph.appendChild(newProjectile);
+            viewport.getGraph().appendChild(newProjectile);
         }
 
         private init(): void {

@@ -28,6 +28,8 @@ namespace TowerDefense {
             console.log(this.health);
             if(this.health<= 0){
                 viewport.getGraph().removeChild(this);
+                enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
+                viewport.getGraph().appendChild(enemy);
             }
         }
 
