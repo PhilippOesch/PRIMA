@@ -3,27 +3,50 @@ var TowerDefense;
 (function (TowerDefense) {
     var ƒ = FudgeCore;
     class Enemy extends ƒ.Node {
-        constructor(_pos = ƒ.Vector3.ZERO(), _direction = ƒ.Vector3.X(), _speed = 0) {
+        constructor(_pos = ƒ.Vector3.ZERO(), _direction = ƒ.Vector3.X(), _speed = 0, _path) {
             super("Enemy");
+            this.nextWaypoint = 0;
             this.health = 1;
             this.armor = 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
             this.isDead = false;
-            this.direction = _direction;
+            //this.direction = _direction;
             this.speed = _speed;
             this.startingPosition = _pos;
+            this.path = _path;
             this.init();
+            console.log(this.path);
         }
         update() {
-            let movement = this.direction.copy;
-            movement.normalize(this.speed);
-            this.cmpTransform.local.translate(movement);
+            // let movement: ƒ.Vector3 = this.direction.copy;
+            // movement.normalize(this.speed);
+            // this.cmpTransform.local.translate(movement);
+            let distanceToTravel = this.speed;
+            let move;
+            while (true) {
+                if (this.nextWaypoint == this.path.length) {
+                    break;
+                }
+                move = ƒ.Vector3.DIFFERENCE(this.path[this.nextWaypoint], this.mtxLocal.translation);
+                if (move.magnitudeSquared > distanceToTravel * distanceToTravel)
+                    break;
+                this.nextWaypoint = ++this.nextWaypoint;
+                if (this.nextWaypoint == 0)
+                    this.mtxLocal.translation = this.path[0];
+            }
+            if (!(this.nextWaypoint == this.path.length)) {
+                this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(move, distanceToTravel));
+            }
+            else {
+                TowerDefense.enemies.removeChild(this);
+            }
         }
         calculateDamage(_projectile) {
             this.health -= (_projectile.strength * this.armor);
             if (this.health <= 0 && !this.isDead) {
                 TowerDefense.enemies.removeChild(this);
-                let enemy = new Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
-                TowerDefense.enemies.appendChild(enemy);
+                // let newPath: Path = new Path(grid[0][0], grid[3][0], grid[3][14]);
+                // let enemy: Enemy = new Enemy(newPath[0], ƒ.Vector3.X(), 0.1, newPath);
+                // enemies.appendChild(enemy);
                 this.isDead = true;
             }
         }
@@ -72,10 +95,9 @@ var TowerDefense;
         graph.appendChild(TowerDefense.enemies);
         initGrid();
         createField(graph);
-        let enemy = new TowerDefense.Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
+        spawnEnemy();
         let tower1 = new TowerDefense.Tower(TowerDefense.grid[4][3]);
         let tower2 = new TowerDefense.Tower(TowerDefense.grid[4][4]);
-        TowerDefense.enemies.appendChild(enemy);
         graph.appendChild(tower1);
         graph.appendChild(tower2);
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
@@ -90,6 +112,7 @@ var TowerDefense;
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 30);
     }
     function update(_event) {
+        spawnEnemy();
         TowerDefense.viewport.draw();
     }
     function createField(_graph) {
@@ -112,6 +135,34 @@ var TowerDefense;
             }
         }
     }
+    function spawnEnemy() {
+        if (TowerDefense.enemies.getChildren().length == 0) {
+            let newPath = new TowerDefense.Path(TowerDefense.grid[0][0], TowerDefense.grid[3][0], TowerDefense.grid[3][14]);
+            let enemy = new TowerDefense.Enemy(newPath[0], ƒ.Vector3.X(), 0.2, newPath);
+            TowerDefense.enemies.appendChild(enemy);
+        }
+    }
+})(TowerDefense || (TowerDefense = {}));
+var TowerDefense;
+(function (TowerDefense) {
+    class Path extends Array {
+        // public waypoints: ƒ.Vector3[] = [];
+        render(_viewport) {
+            let crc2 = _viewport.getContext();
+            let first = true;
+            for (let waypoint of this) {
+                let projection = TowerDefense.viewport.camera.project(waypoint);
+                let posClient = TowerDefense.viewport.pointClipToClient(projection.toVector2());
+                if (first)
+                    crc2.moveTo(posClient.x, posClient.y);
+                else
+                    crc2.lineTo(posClient.x, posClient.y);
+                first = false;
+            }
+            crc2.stroke();
+        }
+    }
+    TowerDefense.Path = Path;
 })(TowerDefense || (TowerDefense = {}));
 var TowerDefense;
 (function (TowerDefense) {

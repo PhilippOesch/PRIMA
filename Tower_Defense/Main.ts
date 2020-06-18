@@ -25,10 +25,9 @@ namespace TowerDefense {
         initGrid();
         createField(graph);
 
-        let enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
+        spawnEnemy();
         let tower1: Tower = new Tower(grid[4][3]);
         let tower2: Tower = new Tower(grid[4][4]);
-        enemies.appendChild(enemy);
         graph.appendChild(tower1);
         graph.appendChild(tower2);
 
@@ -48,6 +47,7 @@ namespace TowerDefense {
     }
 
     function update(_event: ƒ.Eventƒ): void {
+        spawnEnemy();
         viewport.draw();
     }
 
@@ -73,6 +73,14 @@ namespace TowerDefense {
             for (let x = 0; x < gridX; x++) {
                 grid[z][x] = new ƒ.Vector3((startLeft + (gridBlockSize * x)), 1, (startTop - (gridBlockSize * z)));
             }
+        }
+    }
+
+    function spawnEnemy(): void {
+        if (enemies.getChildren().length == 0) {
+            let newPath: Path = new Path(grid[0][0], grid[3][0], grid[3][14]);
+            let enemy: Enemy = new Enemy(newPath[0], ƒ.Vector3.X(), 0.2, newPath);
+            enemies.appendChild(enemy);
         }
     }
 }
