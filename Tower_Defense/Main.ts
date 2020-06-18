@@ -9,9 +9,9 @@ namespace TowerDefense {
     export let viewport: ƒ.Viewport;
     export let grid: ƒ.Vector3[][];
     export let enemies: ƒ.Node;
+    export let gridBlockSize: number = 4;
     let gridX: number = 15;
     let gridZ: number = 10;
-    let gridBlockSize: number = 4;
 
 
     function hndLoad(_event: Event): void {
@@ -26,17 +26,18 @@ namespace TowerDefense {
         createField(graph);
 
         spawnEnemy();
-        let tower1: Tower = new Tower(grid[4][3]);
-        let tower2: Tower = new Tower(grid[4][4]);
+        let tower1: ITower = new ITower(grid[5][1]);
+        tower1.rotate(ƒ.Vector3.Y(90));
+        //let tower2: ITower = new Tower(grid[3][0]);
         graph.appendChild(tower1);
-        graph.appendChild(tower2);
+        //graph.appendChild(tower2);
 
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
         cmpCamera.pivot.translate(new ƒ.Vector3(0, gridBlockSize * gridX * 1.3, 1));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
-        cmpCamera.backgroundColor = ƒ.Color.CSS("white");
+        cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
 
         viewport = new ƒ.Viewport();
         viewport.initialize("Viewport", graph, cmpCamera, canvas);

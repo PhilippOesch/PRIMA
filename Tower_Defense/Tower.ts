@@ -4,12 +4,12 @@ namespace TowerDefense {
     import ƒ = FudgeCore;
 
     export class Tower extends ƒ.Node {
-        private position: ƒ.Vector3;
-        private rate: number = 1000; //in ms
-        private shootingInterval: number;
-        private isShooting: boolean = false;
-        private range: number = 12;
-        private targetedEnemy: Enemy;
+        protected position: ƒ.Vector3;
+        protected rate: number = 1000; //in ms
+        protected shootingInterval: number;
+        protected isShooting: boolean = false;
+        protected range: number = 12;
+        protected targetedEnemy: Enemy;
 
         constructor(_pos: ƒ.Vector3) {
             super("Tower");
@@ -19,6 +19,11 @@ namespace TowerDefense {
 
         public update(): void {
             this.follow();
+        }
+
+        
+        public rotate(_rotation: ƒ.Vector3): void{
+            this.cmpTransform.local.rotate(_rotation);
         }
 
         public follow(): void {
@@ -36,7 +41,7 @@ namespace TowerDefense {
                     let cannon: ƒ.Node = this.getChildrenByName("Tower Cannon")[0];
                     enemyPos.subtract(cannon.mtxWorld.translation); //Adjust Direction to point at the right pos
                     if (cannon != null) {
-                        cannon.cmpTransform.local.lookAt(enemyPos, ƒ.Vector3.Y());
+                        cannon.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
                     if (!this.isShooting) {
                         this.shootingInterval = setInterval(this.fireProjectile, this.rate);
@@ -56,21 +61,21 @@ namespace TowerDefense {
 
         }
 
-        private fireProjectile = (): void => {
+        protected fireProjectile = (): void => {
             let startingPos: ƒ.Matrix4x4 = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
 
             let newProjectile: Projectile = new Projectile(startingPos.translation.copy, this.targetedEnemy);
             viewport.getGraph().appendChild(newProjectile);
         }
 
-        private init(): void {
+        protected init(): void {
             this.createNodes();
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
             // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
             // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
         }
 
-        private createNodes(): void {
+        protected createNodes(): void {
             let meshCube: ƒ.MeshCube = new ƒ.MeshCube();
             //let meshPyramid: ƒ.MeshPyramid= new ƒ.MeshPyramid();
             let meshSphere: ƒ.MeshSphere = new ƒ.MeshSphere();
@@ -121,7 +126,7 @@ namespace TowerDefense {
             this.addComponent(towerTransformation);
         }
 
-        private getClosestEnemy(): Enemy {
+        protected getClosestEnemy(): Enemy {
             let enemiesArray: Array<Enemy> = enemies.getChildren().map((value) => {
                 return <Enemy>value;
             });
@@ -149,5 +154,12 @@ namespace TowerDefense {
             }
 
         }
+
+        protected calculateRelativeMatrix(_matrix: ƒ.Matrix4x4, _relativeTo: ƒ.Matrix4x4): ƒ.Matrix4x4 {
+            let result: ƒ.Matrix4x4;
+            result = ƒ.Matrix4x4.INVERSION(_relativeTo);
+            result = ƒ.Matrix4x4.MULTIPLICATION(result, _matrix);
+            return result;
+          }
     }
 }
