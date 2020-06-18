@@ -7,6 +7,7 @@ var TowerDefense;
             super("Enemy");
             this.health = 1;
             this.armor = 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
+            this.isDead = false;
             this.direction = _direction;
             this.speed = _speed;
             this.startingPosition = _pos;
@@ -19,11 +20,11 @@ var TowerDefense;
         }
         calculateDamage(_projectile) {
             this.health -= (_projectile.strength * this.armor);
-            console.log(this.health);
-            if (this.health <= 0) {
-                TowerDefense.viewport.getGraph().removeChild(this);
-                TowerDefense.enemy = new Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
-                TowerDefense.viewport.getGraph().appendChild(TowerDefense.enemy);
+            if (this.health <= 0 && !this.isDead) {
+                TowerDefense.enemies.removeChild(this);
+                let enemy = new Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
+                TowerDefense.enemies.appendChild(enemy);
+                this.isDead = true;
             }
         }
         init() {
@@ -67,12 +68,14 @@ var TowerDefense;
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
         let graph = new ƒ.Node("Game");
+        TowerDefense.enemies = new ƒ.Node("enemies");
+        graph.appendChild(TowerDefense.enemies);
         initGrid();
         createField(graph);
-        TowerDefense.enemy = new TowerDefense.Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
+        let enemy = new TowerDefense.Enemy(TowerDefense.grid[2][0], ƒ.Vector3.X(), 0.1);
         let tower1 = new TowerDefense.Tower(TowerDefense.grid[4][3]);
         let tower2 = new TowerDefense.Tower(TowerDefense.grid[4][4]);
-        graph.appendChild(TowerDefense.enemy);
+        TowerDefense.enemies.appendChild(enemy);
         graph.appendChild(tower1);
         graph.appendChild(tower2);
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
@@ -116,16 +119,15 @@ var TowerDefense;
     class Projectile extends ƒ.Node {
         constructor(_pos, _enemy, _speed = 1) {
             super("Projectile");
-            this.strength = 0.5;
+            this.strength = 0.4;
             this.collisionActive = true;
             this.startingposition = _pos;
             this.enemy = _enemy;
             this.speed = _speed;
             this.init();
-            console.log("Projectile created");
         }
         update() {
-            let enemyPos = TowerDefense.enemy.cmpTransform.local.copy;
+            let enemyPos = this.enemy.cmpTransform.local.copy;
             let startingPos = this.cmpTransform.local.copy;
             let movement = startingPos.getTranslationTo(enemyPos);
             movement.normalize(this.speed);
@@ -176,7 +178,7 @@ var TowerDefense;
             this.range = 12;
             this.fireProjectile = () => {
                 let startingPos = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
-                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, TowerDefense.enemy);
+                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, this.targetedEnemy);
                 TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
             this.position = _pos;
@@ -186,12 +188,13 @@ var TowerDefense;
             this.follow();
         }
         follow() {
-            let enemy = TowerDefense.viewport.getGraph().getChildrenByName("Enemy")[0];
-            if (enemy != undefined) {
-                let distanceSquared = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, enemy.mtxWorld.translation).magnitudeSquared;
+            this.targetedEnemy = this.getClosestEnemy();
+            //let enemy: Enemy = <Enemy>enemies.getChildrenByName("Enemy")[0];
+            if (this.targetedEnemy != undefined) {
+                let distanceSquared = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, this.targetedEnemy.mtxWorld.translation).magnitudeSquared;
                 // console.log("Squared Distanze is:" + distanceSquared);
                 if (distanceSquared < (this.range * this.range)) {
-                    let enemyPos = enemy.mtxWorld.translation.copy;
+                    let enemyPos = this.targetedEnemy.mtxWorld.translation.copy;
                     let cannon = this.getChildrenByName("Tower Cannon")[0];
                     enemyPos.subtract(cannon.mtxWorld.translation); //Adjust Direction to point at the right pos
                     if (cannon != null) {
@@ -264,6 +267,30 @@ var TowerDefense;
             let towerTransformation = new ƒ.ComponentTransform();
             towerTransformation.local.translate(this.position);
             this.addComponent(towerTransformation);
+        }
+        getClosestEnemy() {
+            let enemiesArray = TowerDefense.enemies.getChildren().map((value) => {
+                return value;
+            });
+            if (enemiesArray.length != 0) {
+                enemiesArray.sort((a, b) => {
+                    let aTranslation = this.mtxWorld.getTranslationTo(a.mtxWorld);
+                    let aDistance = aTranslation.magnitudeSquared;
+                    let bTranslation = this.mtxWorld.getTranslationTo(b.mtxWorld);
+                    let bDistance = bTranslation.magnitudeSquared;
+                    if (aDistance < bDistance) {
+                        return -1;
+                    }
+                    if (aDistance > bDistance) {
+                        return 1;
+                    }
+                    return 0;
+                });
+                return enemiesArray[0];
+            }
+            else {
+                return null;
+            }
         }
     }
     TowerDefense.Tower = Tower;

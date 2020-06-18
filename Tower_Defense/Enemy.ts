@@ -5,8 +5,9 @@ namespace TowerDefense {
         private direction: ƒ.Vector3;
         private speed: number;
         private startingPosition: ƒ.Vector3;
-        private health: number= 1;
-        private armor: number= 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
+        private health: number = 1;
+        private armor: number = 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
+        private isDead: boolean= false;
 
         constructor(_pos: ƒ.Vector3 = ƒ.Vector3.ZERO(), _direction: ƒ.Vector3 = ƒ.Vector3.X(), _speed: number = 0) {
             super("Enemy");
@@ -25,11 +26,11 @@ namespace TowerDefense {
 
         public calculateDamage(_projectile: Projectile): void{
             this.health -= (_projectile.strength * this.armor);
-            console.log(this.health);
-            if(this.health<= 0){
-                viewport.getGraph().removeChild(this);
-                enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
-                viewport.getGraph().appendChild(enemy);
+            if(this.health<= 0 && !this.isDead){
+                enemies.removeChild(this);
+                let enemy: Enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
+                enemies.appendChild(enemy);
+                this.isDead= true;
             }
         }
 

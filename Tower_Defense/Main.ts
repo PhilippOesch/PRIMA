@@ -7,8 +7,8 @@ namespace TowerDefense {
     window.addEventListener("load", hndLoad);
 
     export let viewport: ƒ.Viewport;
-    export let enemy: Enemy;
     export let grid: ƒ.Vector3[][];
+    export let enemies: ƒ.Node;
     let gridX: number = 15;
     let gridZ: number = 10;
     let gridBlockSize: number = 4;
@@ -19,14 +19,16 @@ namespace TowerDefense {
         ƒ.Debug.log(canvas);
 
         let graph: ƒ.Node = new ƒ.Node("Game");
+        enemies = new ƒ.Node("enemies");
+        graph.appendChild(enemies);
 
         initGrid();
         createField(graph);
 
-        enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
+        let enemy = new Enemy(grid[2][0], ƒ.Vector3.X(), 0.1);
         let tower1: Tower = new Tower(grid[4][3]);
         let tower2: Tower = new Tower(grid[4][4]);
-        graph.appendChild(enemy);
+        enemies.appendChild(enemy);
         graph.appendChild(tower1);
         graph.appendChild(tower2);
 

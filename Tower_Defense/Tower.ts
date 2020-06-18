@@ -9,6 +9,7 @@ namespace TowerDefense {
         private shootingInterval: number;
         private isShooting: boolean = false;
         private range: number = 12;
+        private targetedEnemy: Enemy;
 
         constructor(_pos: ƒ.Vector3) {
             super("Tower");
@@ -21,13 +22,17 @@ namespace TowerDefense {
         }
 
         public follow(): void {
-            let enemy: Enemy = <Enemy>viewport.getGraph().getChildrenByName("Enemy")[0];
 
-            if (enemy != undefined) {
-                let distanceSquared: number = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, enemy.mtxWorld.translation).magnitudeSquared;
+            this.targetedEnemy = this.getClosestEnemy();
+
+            //let enemy: Enemy = <Enemy>enemies.getChildrenByName("Enemy")[0];
+
+            if (this.targetedEnemy != undefined) {
+                let distanceSquared: number = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, this.targetedEnemy.mtxWorld.translation).magnitudeSquared;
+
                 // console.log("Squared Distanze is:" + distanceSquared);
                 if (distanceSquared < (this.range * this.range)) {
-                    let enemyPos: ƒ.Vector3 = enemy.mtxWorld.translation.copy;
+                    let enemyPos: ƒ.Vector3 = this.targetedEnemy.mtxWorld.translation.copy;
                     let cannon: ƒ.Node = this.getChildrenByName("Tower Cannon")[0];
                     enemyPos.subtract(cannon.mtxWorld.translation); //Adjust Direction to point at the right pos
                     if (cannon != null) {
@@ -43,9 +48,10 @@ namespace TowerDefense {
                         this.isShooting = false;
                     }
                 }
-            }  else if(this.isShooting){
+            } else if (this.isShooting) {
                 this.isShooting = false;
                 clearInterval(this.shootingInterval);
+
             }
 
         }
@@ -53,7 +59,7 @@ namespace TowerDefense {
         private fireProjectile = (): void => {
             let startingPos: ƒ.Matrix4x4 = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
 
-            let newProjectile: Projectile = new Projectile(startingPos.translation.copy, enemy);
+            let newProjectile: Projectile = new Projectile(startingPos.translation.copy, this.targetedEnemy);
             viewport.getGraph().appendChild(newProjectile);
         }
 
@@ -113,6 +119,35 @@ namespace TowerDefense {
             let towerTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform();
             towerTransformation.local.translate(this.position);
             this.addComponent(towerTransformation);
+        }
+
+        private getClosestEnemy(): Enemy {
+            let enemiesArray: Array<Enemy> = enemies.getChildren().map((value) => {
+                return <Enemy>value;
+            });
+
+            if (enemiesArray.length != 0) {
+                enemiesArray.sort((a, b) => {
+                    let aTranslation: ƒ.Vector3 = this.mtxWorld.getTranslationTo(a.mtxWorld);
+                    let aDistance: number = aTranslation.magnitudeSquared;
+                    let bTranslation: ƒ.Vector3 = this.mtxWorld.getTranslationTo(b.mtxWorld);
+                    let bDistance: number = bTranslation.magnitudeSquared;
+
+                    if (aDistance < bDistance) {
+                        return -1;
+                    }
+                    if (aDistance > bDistance) {
+                        return 1;
+                    }
+
+                    return 0;
+                });
+
+                return enemiesArray[0];
+            } else {
+                return null;
+            }
+
         }
     }
 }

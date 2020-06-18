@@ -2,7 +2,7 @@ namespace TowerDefense {
     import ƒ = FudgeCore;
 
     export class Projectile extends ƒ.Node {
-        public strength: number = 0.5;
+        public strength: number = 0.4;
 
         private startingposition: ƒ.Vector3;
         private enemy: Enemy;
@@ -15,11 +15,10 @@ namespace TowerDefense {
             this.enemy = _enemy;
             this.speed = _speed;
             this.init();
-            console.log("Projectile created");
         }
 
         public update(): void {
-            let enemyPos: ƒ.Matrix4x4 = enemy.cmpTransform.local.copy;
+            let enemyPos: ƒ.Matrix4x4 = this.enemy.cmpTransform.local.copy;
             let startingPos: ƒ.Matrix4x4 = this.cmpTransform.local.copy;
             let movement: ƒ.Vector3 = startingPos.getTranslationTo(enemyPos);
             movement.normalize(this.speed);
