@@ -8,12 +8,15 @@ namespace TowerDefense {
         private enemy: Enemy;
         private speed: number;
         private collisionActive = true;
+        private size: number;
 
-        constructor(_pos: ƒ.Vector3, _enemy: Enemy, _speed: number = 1) {
+        constructor(_pos: ƒ.Vector3, _enemy: Enemy, _strength: number= 0.4, _size: number= 0.5, _speed: number = 1) {
             super("Projectile");
             this.startingposition = _pos;
             this.enemy = _enemy;
             this.speed = _speed;
+            this.size= _size;
+            this.strength= _strength;
             this.init();
         }
 
@@ -50,7 +53,7 @@ namespace TowerDefense {
             let mtrPlayfield: ƒ.Material = new ƒ.Material("projectileMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
 
             let meshCmp: ƒ.ComponentMesh = new ƒ.ComponentMesh(mesh);
-            meshCmp.pivot.scale(ƒ.Vector3.ONE(0.5));
+            meshCmp.pivot.scale(ƒ.Vector3.ONE(this.size));
             this.addComponent(meshCmp);
             this.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
 

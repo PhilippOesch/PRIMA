@@ -1,5 +1,6 @@
 namespace TowerDefense {
     import ƒ = FudgeCore;
+    import ƒAid = FudgeAid;
 
     export class Enemy extends ƒ.Node {
         public nextWaypoint: number = 0;
@@ -8,13 +9,12 @@ namespace TowerDefense {
         private speed: number;
         private startingPosition: ƒ.Vector3;
         private health: number = 1;
-        private armor: number = 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
+        private armor: number = 0.2; //Faktor for Damage Reduktion, closer to 0 means less Damage
         private isDead: boolean = false;
         private path: Path;
 
         constructor(_pos: ƒ.Vector3 = ƒ.Vector3.ZERO(), _direction: ƒ.Vector3 = ƒ.Vector3.X(), _speed: number = 0, _path: Path) {
             super("Enemy");
-            //this.direction = _direction;
             this.speed = _speed;
             this.startingPosition = _pos;
             this.path = _path;
@@ -23,9 +23,6 @@ namespace TowerDefense {
         }
 
         public update(): void {
-            // let movement: ƒ.Vector3 = this.direction.copy;
-            // movement.normalize(this.speed);
-            // this.cmpTransform.local.translate(movement);
 
             let distanceToTravel: number = this.speed;
             let move: ƒ.Vector3;
@@ -54,9 +51,6 @@ namespace TowerDefense {
             this.health -= (_projectile.strength * this.armor);
             if (this.health <= 0 && !this.isDead) {
                 enemies.removeChild(this);
-                // let newPath: Path = new Path(grid[0][0], grid[3][0], grid[3][14]);
-                // let enemy: Enemy = new Enemy(newPath[0], ƒ.Vector3.X(), 0.1, newPath);
-                // enemies.appendChild(enemy);
                 this.isDead = true;
             }
         }
@@ -71,23 +65,12 @@ namespace TowerDefense {
             let meshHead: ƒ.MeshSphere = new ƒ.MeshSphere();
             let mtr: ƒ.Material = new ƒ.Material("enemyMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0, 0)));
 
-            let body: ƒ.Node = new ƒ.Node("ememy Body");
-            body.addComponent(new ƒ.ComponentMesh(meshBody));
-            body.addComponent(new ƒ.ComponentMaterial(mtr));
-            let bodyTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(1, 1, 1)));
-            body.addComponent(bodyTransformation);
+            let body: ƒAid.Node= new ƒAid.Node("ememy Body", ƒ.Matrix4x4.IDENTITY(), mtr, meshBody)
             this.appendChild(body);
-
-            let head: ƒ.Node = new ƒ.Node("ememy Head");
-            head.addComponent(new ƒ.ComponentMesh(meshHead));
-            head.addComponent(new ƒ.ComponentMaterial(mtr));
-            let headTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(1, 1, 1)));
-            headTransformation.local.translate(ƒ.Vector3.Y(1));
-            head.addComponent(headTransformation);
+            let head: ƒAid.Node= new ƒAid.Node("ememy Head", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(1)), mtr, meshHead);
             this.appendChild(head);
 
-            let enemyTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform();
-            enemyTransformation.local.translate(this.startingPosition);
+            let enemyTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingPosition));
             this.addComponent(enemyTransformation);
         }
     }

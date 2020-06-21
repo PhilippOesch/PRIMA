@@ -43,14 +43,14 @@ var TowerDefense;
 var TowerDefense;
 (function (TowerDefense) {
     var ƒ = FudgeCore;
+    var ƒAid = FudgeAid;
     class Enemy extends ƒ.Node {
         constructor(_pos = ƒ.Vector3.ZERO(), _direction = ƒ.Vector3.X(), _speed = 0, _path) {
             super("Enemy");
             this.nextWaypoint = 0;
             this.health = 1;
-            this.armor = 0.5; //Faktor for Damage Reduktion, closer to 0 means less Damage
+            this.armor = 0.2; //Faktor for Damage Reduktion, closer to 0 means less Damage
             this.isDead = false;
-            //this.direction = _direction;
             this.speed = _speed;
             this.startingPosition = _pos;
             this.path = _path;
@@ -58,9 +58,6 @@ var TowerDefense;
             console.log(this.path);
         }
         update() {
-            // let movement: ƒ.Vector3 = this.direction.copy;
-            // movement.normalize(this.speed);
-            // this.cmpTransform.local.translate(movement);
             let distanceToTravel = this.speed;
             let move;
             while (true) {
@@ -85,9 +82,6 @@ var TowerDefense;
             this.health -= (_projectile.strength * this.armor);
             if (this.health <= 0 && !this.isDead) {
                 TowerDefense.enemies.removeChild(this);
-                // let newPath: Path = new Path(grid[0][0], grid[3][0], grid[3][14]);
-                // let enemy: Enemy = new Enemy(newPath[0], ƒ.Vector3.X(), 0.1, newPath);
-                // enemies.appendChild(enemy);
                 this.isDead = true;
             }
         }
@@ -99,21 +93,11 @@ var TowerDefense;
             let meshBody = new ƒ.MeshCube();
             let meshHead = new ƒ.MeshSphere();
             let mtr = new ƒ.Material("enemyMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0, 0)));
-            let body = new ƒ.Node("ememy Body");
-            body.addComponent(new ƒ.ComponentMesh(meshBody));
-            body.addComponent(new ƒ.ComponentMaterial(mtr));
-            let bodyTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(1, 1, 1)));
-            body.addComponent(bodyTransformation);
+            let body = new ƒAid.Node("ememy Body", ƒ.Matrix4x4.IDENTITY(), mtr, meshBody);
             this.appendChild(body);
-            let head = new ƒ.Node("ememy Head");
-            head.addComponent(new ƒ.ComponentMesh(meshHead));
-            head.addComponent(new ƒ.ComponentMaterial(mtr));
-            let headTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.SCALING(new ƒ.Vector3(1, 1, 1)));
-            headTransformation.local.translate(ƒ.Vector3.Y(1));
-            head.addComponent(headTransformation);
+            let head = new ƒAid.Node("ememy Head", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(1)), mtr, meshHead);
             this.appendChild(head);
-            let enemyTransformation = new ƒ.ComponentTransform();
-            enemyTransformation.local.translate(this.startingPosition);
+            let enemyTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingPosition));
             this.addComponent(enemyTransformation);
         }
     }
@@ -123,13 +107,15 @@ var TowerDefense;
 (function (TowerDefense) {
     var ƒ = FudgeCore;
     class Projectile extends ƒ.Node {
-        constructor(_pos, _enemy, _speed = 1) {
+        constructor(_pos, _enemy, _strength = 0.4, _size = 0.5, _speed = 1) {
             super("Projectile");
             this.strength = 0.4;
             this.collisionActive = true;
             this.startingposition = _pos;
             this.enemy = _enemy;
             this.speed = _speed;
+            this.size = _size;
+            this.strength = _strength;
             this.init();
         }
         update() {
@@ -161,7 +147,7 @@ var TowerDefense;
             let mesh = new ƒ.MeshSphere();
             let mtrPlayfield = new ƒ.Material("projectileMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
             let meshCmp = new ƒ.ComponentMesh(mesh);
-            meshCmp.pivot.scale(ƒ.Vector3.ONE(0.5));
+            meshCmp.pivot.scale(ƒ.Vector3.ONE(this.size));
             this.addComponent(meshCmp);
             this.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
             let transformationComponent = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingposition));
@@ -176,18 +162,20 @@ var TowerDefense;
 /// <reference path="Projectile.ts"/>
 (function (TowerDefense) {
     var ƒ = FudgeCore;
+    var ƒAid = FudgeAid;
     class Tower extends ƒ.Node {
-        constructor(_pos) {
+        constructor(_pos, _material = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0.5, 0.5)))) {
             super("Tower");
             this.rate = 1000; //in ms
             this.isShooting = false;
-            this.range = 12;
-            this.fireProjectile = () => {
-                let startingPos = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
-                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, this.targetedEnemy);
+            this.range = 14;
+            this.fireProjectile = (_node, _enemy) => {
+                let startingPos = _node.mtxWorld.copy;
+                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, _enemy);
                 TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
             this.position = _pos;
+            this.mtr = _material;
             this.init();
         }
         update() {
@@ -210,7 +198,7 @@ var TowerDefense;
                         cannon.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
                     if (!this.isShooting) {
-                        this.shootingInterval = setInterval(this.fireProjectile, this.rate);
+                        this.shootingInterval = setInterval(() => this.fireProjectile(cannon, this.targetedEnemy), this.rate);
                         this.isShooting = true;
                     }
                 }
@@ -229,52 +217,28 @@ var TowerDefense;
         init() {
             this.createNodes();
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
-            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
-            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
         }
         createNodes() {
             let meshCube = new ƒ.MeshCube();
-            //let meshPyramid: ƒ.MeshPyramid= new ƒ.MeshPyramid();
             let meshSphere = new ƒ.MeshSphere();
-            let mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0.5, 0.5)));
             let mtrCannon = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
-            let base = new ƒ.Node("Tower Base");
-            let baseMeshCmp = new ƒ.ComponentMesh(meshCube);
+            let base = new ƒAid.Node("Tower Base", ƒ.Matrix4x4.IDENTITY(), this.mtr, meshCube);
+            let baseMeshCmp = base.getComponent(ƒ.ComponentMesh);
             baseMeshCmp.pivot.scale(new ƒ.Vector3(4, 0.5, 4));
-            base.addComponent(baseMeshCmp);
-            base.addComponent(new ƒ.ComponentMaterial(mtr));
-            let baseTransformation = new ƒ.ComponentTransform();
-            base.addComponent(baseTransformation);
             this.appendChild(base);
-            let body = new ƒ.Node("Tower Body");
-            let bodyMeshCmp = new ƒ.ComponentMesh(meshCube);
+            let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
             bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
-            body.addComponent(bodyMeshCmp);
-            body.addComponent(new ƒ.ComponentMaterial(mtr));
-            let bodyTransformation = new ƒ.ComponentTransform();
-            bodyTransformation.local.translate(ƒ.Vector3.Y(0.5));
-            body.addComponent(bodyTransformation);
             this.appendChild(body);
-            let cannon = new ƒ.Node("Tower Cannon");
-            let cannonMeshCmp = new ƒ.ComponentMesh(meshSphere);
+            let cannon = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
+            let cannonMeshCmp = cannon.getComponent(ƒ.ComponentMesh);
             cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
-            cannon.addComponent(cannonMeshCmp);
-            cannon.addComponent(new ƒ.ComponentMaterial(mtr));
-            let cannonTransformation = new ƒ.ComponentTransform();
-            cannonTransformation.local.translateY(3.3, false);
-            cannon.addComponent(cannonTransformation);
             this.appendChild(cannon);
-            let cannonBarrel = new ƒ.Node("Canon Barrel");
-            let cannonBarrelMeshCmp = new ƒ.ComponentMesh(meshCube);
+            let cannonBarrel = new ƒAid.Node("Canon Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannonBarrelMeshCmp = cannonBarrel.getComponent(ƒ.ComponentMesh);
             cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
-            cannonBarrel.addComponent(cannonBarrelMeshCmp);
-            cannonBarrel.addComponent(new ƒ.ComponentMaterial(mtrCannon));
-            let cannonBarrelTransformation = new ƒ.ComponentTransform();
-            cannonBarrelTransformation.local.translateZ(1);
-            cannonBarrel.addComponent(cannonBarrelTransformation);
             cannon.appendChild(cannonBarrel);
-            let towerTransformation = new ƒ.ComponentTransform();
-            towerTransformation.local.translate(this.position);
+            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.position));
             this.addComponent(towerTransformation);
         }
         getClosestEnemy() {
@@ -314,35 +278,43 @@ var TowerDefense;
 var TowerDefense;
 /// <reference path="Tower.ts"/>
 (function (TowerDefense) {
+    var ƒ = FudgeCore;
+    var ƒAid = FudgeAid;
     class ITower extends TowerDefense.Tower {
         constructor() {
             super(...arguments);
-            this.fireProjectile = () => {
-                let startingPos = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
-                let startingPos2 = this.getChildrenByName("Tower2 Cannon")[0].mtxWorld.copy;
-                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, this.targetedEnemy);
-                let newProjectile2 = new TowerDefense.Projectile(startingPos2.translation.copy, this.targetedEnemy);
-                TowerDefense.viewport.getGraph().appendChild(newProjectile);
-                TowerDefense.viewport.getGraph().appendChild(newProjectile2);
-            };
+            this.isShooting2 = false;
+        }
+        init() {
+            this.range = 12;
+            this.cannon1RelPos = ƒ.Vector3.X(-4);
+            this.cannon2RelPos = ƒ.Vector3.X(4);
+            this.xScale = 12;
+            this.zScale = 4;
+            this.createNodes();
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
+            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
         }
         follow() {
-            this.targetedEnemy = this.getClosestEnemy();
+            let targetedEnemy1 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower Cannon")[0]);
+            let targetedEnemy2 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower2 Cannon")[0]);
+            let cannon1 = this.getChildrenByName("Tower Cannon")[0];
+            let cannon2 = this.getChildrenByName("Tower2 Cannon")[0];
             //let enemy: Enemy = <Enemy>enemies.getChildrenByName("Enemy")[0];
-            if (this.targetedEnemy != undefined) {
-                let distanceSquared = ƒ.Vector3.DIFFERENCE(this.mtxWorld.translation, this.targetedEnemy.mtxWorld.translation).magnitudeSquared;
+            //this.targetAnEnemy(targetedEnemy2, cannon2, this.isShooting2, this.shootingInterval2);
+            if (targetedEnemy1 != undefined) {
+                let distanceSquared = ƒ.Vector3.DIFFERENCE(cannon1.mtxWorld.translation, targetedEnemy1.mtxWorld.translation).magnitudeSquared;
                 // console.log("Squared Distanze is:" + distanceSquared);
                 if (distanceSquared < (this.range * this.range)) {
-                    let enemyPos = this.targetedEnemy.mtxLocal.translation.copy;
-                    let cannon = this.getChildrenByName("Tower Cannon")[0];
-                    let cannon2 = this.getChildrenByName("Tower2 Cannon")[0];
-                    enemyPos.subtract(this.mtxWorld.translation.copy); //Adjust Direction to point at the right pos //Adjust Direction to point at the right pos
-                    if (cannon != null) {
-                        cannon.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
-                        cannon2.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
+                    let enemyPos = targetedEnemy1.mtxWorld.translation.copy;
+                    enemyPos.add(this.cannon1RelPos);
+                    enemyPos.subtract(cannon1.mtxWorld.translation); //Adjust Direction to point at the right pos
+                    if (cannon1 != null) {
+                        cannon1.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
                     if (!this.isShooting) {
-                        this.shootingInterval = setInterval(this.fireProjectile, this.rate);
+                        this.shootingInterval = setInterval(() => this.fireProjectile(cannon1, targetedEnemy1), this.rate);
                         this.isShooting = true;
                     }
                 }
@@ -357,91 +329,122 @@ var TowerDefense;
                 this.isShooting = false;
                 clearInterval(this.shootingInterval);
             }
-        }
-        init() {
-            this.createNodes();
-            this.range = 16;
-            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            if (targetedEnemy2 != undefined) {
+                let distanceSquare2 = ƒ.Vector3.DIFFERENCE(cannon2.mtxWorld.translation, targetedEnemy2.mtxWorld.translation).magnitudeSquared;
+                // console.log("Squared Distanze is:" + distanceSquared);
+                if (distanceSquare2 < (this.range * this.range)) {
+                    let enemyPos = targetedEnemy2.mtxWorld.translation.copy;
+                    enemyPos.add(this.cannon2RelPos);
+                    enemyPos.subtract(cannon2.mtxWorld.translation); //Adjust Direction to point at the right pos
+                    if (cannon2 != null) {
+                        cannon2.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
+                    }
+                    if (!this.isShooting2) {
+                        this.shootingInterval2 = setInterval(() => this.fireProjectile(cannon2, targetedEnemy2), this.rate);
+                        this.isShooting2 = true;
+                    }
+                }
+                else {
+                    if (this.isShooting2) {
+                        clearInterval(this.shootingInterval2);
+                        this.isShooting2 = false;
+                    }
+                }
+            }
+            else if (this.isShooting2) {
+                this.isShooting2 = false;
+                clearInterval(this.shootingInterval2);
+            }
         }
         createNodes() {
             let meshCube = new ƒ.MeshCube();
             //let meshPyramid: ƒ.MeshPyramid= new ƒ.MeshPyramid();
             let meshSphere = new ƒ.MeshSphere();
-            let mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)));
             let mtrCannon = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
-            let base = new ƒ.Node("Tower Base");
-            let baseMeshCmp = new ƒ.ComponentMesh(meshCube);
-            baseMeshCmp.pivot.translate(ƒ.Vector3.X(2));
-            baseMeshCmp.pivot.scale(new ƒ.Vector3(16, 0.5, 4));
-            base.addComponent(baseMeshCmp);
-            base.addComponent(new ƒ.ComponentMaterial(mtr));
-            let baseTransformation = new ƒ.ComponentTransform();
-            base.addComponent(baseTransformation);
+            let base = new ƒAid.Node("Tower Base", ƒ.Matrix4x4.IDENTITY(), this.mtr, meshCube);
+            let baseMeshCmp = base.getComponent(ƒ.ComponentMesh);
+            baseMeshCmp.pivot.scale(new ƒ.Vector3(this.xScale, 0.5, this.zScale));
             this.appendChild(base);
-            let body = new ƒ.Node("Tower Body");
-            let bodyMeshCmp = new ƒ.ComponentMesh(meshCube);
+            let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
             bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
-            body.addComponent(bodyMeshCmp);
-            body.addComponent(new ƒ.ComponentMaterial(mtr));
-            let bodyTransformation = new ƒ.ComponentTransform();
-            bodyTransformation.local.translate(ƒ.Vector3.Y(0.5));
-            bodyTransformation.local.translate(ƒ.Vector3.X(-2));
-            body.addComponent(bodyTransformation);
+            let bodyTransformation = body.getComponent(ƒ.ComponentTransform);
+            bodyTransformation.local.translate(this.cannon1RelPos);
             this.appendChild(body);
-            let cannon = new ƒ.Node("Tower Cannon");
-            let cannonMeshCmp = new ƒ.ComponentMesh(meshSphere);
-            cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
-            cannon.addComponent(cannonMeshCmp);
-            cannon.addComponent(new ƒ.ComponentMaterial(mtr));
-            let cannonTransformation = new ƒ.ComponentTransform();
-            cannonTransformation.local.translateY(3.3, false);
-            cannonTransformation.local.translate(ƒ.Vector3.X(-2));
-            cannon.addComponent(cannonTransformation);
-            this.appendChild(cannon);
-            let cannonBarrel = new ƒ.Node("Canon Barrel");
-            let cannonBarrelMeshCmp = new ƒ.ComponentMesh(meshCube);
-            cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
-            cannonBarrel.addComponent(cannonBarrelMeshCmp);
-            cannonBarrel.addComponent(new ƒ.ComponentMaterial(mtrCannon));
-            let cannonBarrelTransformation = new ƒ.ComponentTransform();
-            cannonBarrelTransformation.local.translateZ(1);
-            cannonBarrel.addComponent(cannonBarrelTransformation);
-            cannon.appendChild(cannonBarrel);
-            let body2 = new ƒ.Node("Tower Body");
-            let body2MeshCmp = new ƒ.ComponentMesh(meshCube);
+            let body2 = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let body2MeshCmp = body2.getComponent(ƒ.ComponentMesh);
             body2MeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
-            body2.addComponent(body2MeshCmp);
-            body2.addComponent(new ƒ.ComponentMaterial(mtr));
-            let body2Transformation = new ƒ.ComponentTransform();
-            body2Transformation.local.translate(ƒ.Vector3.Y(0.5));
-            body2Transformation.local.translate(ƒ.Vector3.X(6));
-            body2.addComponent(body2Transformation);
+            let body2Transformation = body2.getComponent(ƒ.ComponentTransform);
+            body2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(body2);
-            let cannon2 = new ƒ.Node("Tower2 Cannon");
-            let cannon2MeshCmp = new ƒ.ComponentMesh(meshSphere);
+            let cannon = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
+            let cannonMeshCmp = cannon.getComponent(ƒ.ComponentMesh);
+            cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
+            let cannonTransformation = cannon.getComponent(ƒ.ComponentTransform);
+            cannonTransformation.local.translate(this.cannon1RelPos);
+            this.appendChild(cannon);
+            let cannon2 = new ƒAid.Node("Tower2 Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
+            let cannon2MeshCmp = cannon2.getComponent(ƒ.ComponentMesh);
             cannon2MeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
-            cannon2.addComponent(cannon2MeshCmp);
-            cannon2.addComponent(new ƒ.ComponentMaterial(mtr));
-            let cannon2Transformation = new ƒ.ComponentTransform();
-            cannon2Transformation.local.translateY(3.3, false);
-            cannon2Transformation.local.translateX(6);
-            cannon2.addComponent(cannon2Transformation);
+            let cannon2Transformation = cannon2.getComponent(ƒ.ComponentTransform);
+            cannon2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(cannon2);
-            let cannon2Barrel = new ƒ.Node("Canon Barrel");
-            let cannon2BarrelMeshCmp = new ƒ.ComponentMesh(meshCube);
+            let cannonBarrel = new ƒAid.Node("Canon Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannonBarrelMeshCmp = cannonBarrel.getComponent(ƒ.ComponentMesh);
+            cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
+            cannon.appendChild(cannonBarrel);
+            let cannon2Barrel = new ƒAid.Node("Canon2 Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannon2BarrelMeshCmp = cannon2Barrel.getComponent(ƒ.ComponentMesh);
             cannon2BarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
-            cannon2Barrel.addComponent(cannon2BarrelMeshCmp);
-            cannon2Barrel.addComponent(new ƒ.ComponentMaterial(mtrCannon));
-            let cannon2BarrelTransformation = new ƒ.ComponentTransform();
-            cannon2BarrelTransformation.local.translateZ(1);
-            cannon2Barrel.addComponent(cannon2BarrelTransformation);
             cannon2.appendChild(cannon2Barrel);
-            let towerTransformation = new ƒ.ComponentTransform();
-            towerTransformation.local.translate(this.position);
+            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.position));
             this.addComponent(towerTransformation);
+        }
+        getClosestEnemyOfNode(_node) {
+            let enemiesArray = TowerDefense.enemies.getChildren().map((value) => {
+                return value;
+            });
+            if (enemiesArray.length != 0) {
+                enemiesArray.sort((a, b) => {
+                    let aTranslation = _node.mtxWorld.getTranslationTo(a.mtxWorld);
+                    let aDistance = aTranslation.magnitudeSquared;
+                    let bTranslation = _node.mtxWorld.getTranslationTo(b.mtxWorld);
+                    let bDistance = bTranslation.magnitudeSquared;
+                    if (aDistance < bDistance) {
+                        return -1;
+                    }
+                    if (aDistance > bDistance) {
+                        return 1;
+                    }
+                    return 0;
+                });
+                return enemiesArray[0];
+            }
+            else {
+                return null;
+            }
         }
     }
     TowerDefense.ITower = ITower;
+})(TowerDefense || (TowerDefense = {}));
+/// <reference path="Tower.ts"/>
+var TowerDefense;
+/// <reference path="Tower.ts"/>
+(function (TowerDefense) {
+    class ITowerVariant extends TowerDefense.ITower {
+        init() {
+            this.range = 12;
+            this.cannon1RelPos = ƒ.Vector3.Z(-4);
+            this.cannon2RelPos = ƒ.Vector3.Z(4);
+            this.xScale = 4;
+            this.zScale = 12;
+            this.createNodes();
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
+            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+        }
+    }
+    TowerDefense.ITowerVariant = ITowerVariant;
 })(TowerDefense || (TowerDefense = {}));
 var TowerDefense;
 (function (TowerDefense) {
@@ -452,6 +455,8 @@ var TowerDefense;
     TowerDefense.gridBlockSize = 4;
     let gridX = 15;
     let gridZ = 10;
+    let blocktowerMtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)));
+    let itowerMtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)));
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
@@ -461,11 +466,14 @@ var TowerDefense;
         initGrid();
         createField(graph);
         spawnEnemy();
-        let tower1 = new TowerDefense.ITower(TowerDefense.grid[5][1]);
-        tower1.rotate(ƒ.Vector3.Y(90));
-        //let tower2: ITower = new Tower(grid[3][0]);
+        let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
+        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], blocktowerMtr);
+        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], itowerMtr);
+        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], itowerMtr);
         graph.appendChild(tower1);
-        //graph.appendChild(tower2);
+        graph.appendChild(tower2);
+        graph.appendChild(tower3);
+        graph.appendChild(tower4);
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
         cmpCamera.pivot.translate(new ƒ.Vector3(0, TowerDefense.gridBlockSize * gridX * 1.3, 1));
@@ -482,8 +490,16 @@ var TowerDefense;
         TowerDefense.viewport.draw();
     }
     function createField(_graph) {
+        // let img: HTMLImageElement= document.querySelector("img");
+        // let txtImage: ƒ.TextureImage= new ƒ.TextureImage();
+        // txtImage.image= img;
+        // let coatTextured: ƒ.CoatTextured = new ƒ.CoatTextured();
+        // coatTextured.texture = txtImage;
+        // coatTextured.repetition= true;
+        // coatTextured.tilingX= 0.1;
+        // let material: ƒ.Material = new ƒ.Material("Textured", ƒ.ShaderTexture, coatTextured);
         let mesh = new ƒ.MeshCube();
-        let mtrPlayfield = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.4, 0)));
+        let mtrPlayfield = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.5, 0)));
         let field = new ƒ.Node("playfield");
         field.addComponent(new ƒ.ComponentMesh(mesh));
         field.addComponent(new ƒ.ComponentMaterial(mtrPlayfield));
@@ -529,5 +545,51 @@ var TowerDefense;
         }
     }
     TowerDefense.Path = Path;
+})(TowerDefense || (TowerDefense = {}));
+var TowerDefense;
+(function (TowerDefense) {
+    var ƒ = FudgeCore;
+    var ƒAid = FudgeAid;
+    class TowerBlock extends TowerDefense.Tower {
+        constructor() {
+            super(...arguments);
+            this.fireProjectile = () => {
+                let startingPos = this.getChildrenByName("Tower Cannon")[0].mtxWorld.copy;
+                let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, this.targetedEnemy, 0.8, 1);
+                TowerDefense.viewport.getGraph().appendChild(newProjectile);
+            };
+        }
+        init() {
+            this.createNodes();
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+        }
+        createNodes() {
+            let meshCube = new ƒ.MeshCube();
+            let meshSphere = new ƒ.MeshSphere();
+            let mtrCannon = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
+            let base = new ƒAid.Node("Tower Base", ƒ.Matrix4x4.IDENTITY(), this.mtr, meshCube);
+            let baseMeshCmp = base.getComponent(ƒ.ComponentMesh);
+            baseMeshCmp.pivot.scale(new ƒ.Vector3(8, 0.5, 8));
+            this.appendChild(base);
+            let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(4, 4, 4));
+            this.appendChild(body);
+            let cannon = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(4.3)), this.mtr, meshSphere);
+            let cannonMeshCmp = cannon.getComponent(ƒ.ComponentMesh);
+            cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(4));
+            this.appendChild(cannon);
+            let cannonBarrel = new ƒAid.Node("Canon Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannonBarrelMeshCmp = cannonBarrel.getComponent(ƒ.ComponentMesh);
+            cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(1, 1, 4));
+            cannon.appendChild(cannonBarrel);
+            let towerTransformation = new ƒ.ComponentTransform();
+            let pos = this.position.copy;
+            pos.add(new ƒ.Vector3(2, 0, 2));
+            towerTransformation.local.translate(pos);
+            this.addComponent(towerTransformation);
+        }
+    }
+    TowerDefense.TowerBlock = TowerBlock;
 })(TowerDefense || (TowerDefense = {}));
 //# sourceMappingURL=TowerDefense.js.map

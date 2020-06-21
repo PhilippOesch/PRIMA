@@ -12,6 +12,8 @@ namespace TowerDefense {
     export let gridBlockSize: number = 4;
     let gridX: number = 15;
     let gridZ: number = 10;
+    let blocktowerMtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)))
+    let itowerMtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)))
 
 
     function hndLoad(_event: Event): void {
@@ -26,11 +28,14 @@ namespace TowerDefense {
         createField(graph);
 
         spawnEnemy();
-        let tower1: ITower = new ITower(grid[5][1]);
-        tower1.rotate(ƒ.Vector3.Y(90));
-        //let tower2: ITower = new Tower(grid[3][0]);
+        let tower1: Tower = new Tower(grid[5][1]);
+        let tower2: TowerBlock = new TowerBlock(grid[6][2], blocktowerMtr);
+        let tower3: ITower = new ITower(grid[5][5], itowerMtr);
+        let tower4: ITowerVariant= new ITowerVariant(grid[1][5], itowerMtr);
         graph.appendChild(tower1);
-        //graph.appendChild(tower2);
+        graph.appendChild(tower2);
+        graph.appendChild(tower3);
+        graph.appendChild(tower4);
 
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
@@ -53,8 +58,17 @@ namespace TowerDefense {
     }
 
     function createField(_graph: ƒ.Node): void {
+        // let img: HTMLImageElement= document.querySelector("img");
+        // let txtImage: ƒ.TextureImage= new ƒ.TextureImage();
+        // txtImage.image= img;
+        // let coatTextured: ƒ.CoatTextured = new ƒ.CoatTextured();
+        // coatTextured.texture = txtImage;
+        // coatTextured.repetition= true;
+        // coatTextured.tilingX= 0.1;
+        // let material: ƒ.Material = new ƒ.Material("Textured", ƒ.ShaderTexture, coatTextured);
+
         let mesh: ƒ.MeshCube = new ƒ.MeshCube();
-        let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.4, 0)));
+        let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.5, 0)));
 
         let field: ƒ.Node = new ƒ.Node("playfield");
         field.addComponent(new ƒ.ComponentMesh(mesh));
