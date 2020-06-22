@@ -22,6 +22,7 @@ namespace TowerDefense{
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
             // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
             // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+            this.addComponent(new ComponentPicker(1));
         }
 
         public follow(): void {

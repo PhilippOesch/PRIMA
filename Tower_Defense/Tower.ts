@@ -13,12 +13,14 @@ namespace TowerDefense {
         protected isShooting: boolean = false;
         protected range: number = 14;
         protected targetedEnemy: Enemy;
+        protected color: ƒ.Color;
 
         constructor(_pos: ƒ.Vector3, 
-                    _material: ƒ.Material= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0.5, 0.5)))) {
+                    _color: ƒ.Color= new ƒ.Color(0.5, 0.5, 0.5)) {
             super("Tower");
             this.position = _pos;
-            this.mtr= _material;
+            this.color= _color;
+            this.mtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
             this.init();
         }
 
@@ -26,6 +28,15 @@ namespace TowerDefense {
             this.follow();
         }
 
+        public setMaterialColor(_color: ƒ.Color): void{
+            let cmpMaterial: ƒ.ComponentMaterial= this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary= _color;
+        }
+
+        public resetMaterialColor(): void {
+            let cmpMaterial: ƒ.ComponentMaterial= this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary= this.color;
+        }
         
         public rotate(_rotation: ƒ.Vector3): void{
             this.cmpTransform.local.rotate(_rotation);
@@ -74,8 +85,11 @@ namespace TowerDefense {
         }
 
         protected init(): void {
+            this.mtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
             this.createNodes();
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+
+            this.addComponent(new ComponentPicker(1));
         }
 
         protected createNodes(): void {
@@ -136,11 +150,5 @@ namespace TowerDefense {
 
         }
 
-        protected calculateRelativeMatrix(_matrix: ƒ.Matrix4x4, _relativeTo: ƒ.Matrix4x4): ƒ.Matrix4x4 {
-            let result: ƒ.Matrix4x4;
-            result = ƒ.Matrix4x4.INVERSION(_relativeTo);
-            result = ƒ.Matrix4x4.MULTIPLICATION(result, _matrix);
-            return result;
-          }
     }
 }

@@ -7,6 +7,7 @@ namespace TowerDefense {
         protected init(): void {
             this.createNodes();
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+            this.addComponent(new ComponentPicker(2));
         }
 
         protected createNodes(): void {

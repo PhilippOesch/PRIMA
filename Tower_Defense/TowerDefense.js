@@ -164,7 +164,7 @@ var TowerDefense;
     var ƒ = FudgeCore;
     var ƒAid = FudgeAid;
     class Tower extends ƒ.Node {
-        constructor(_pos, _material = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.5, 0.5, 0.5)))) {
+        constructor(_pos, _color = new ƒ.Color(0.5, 0.5, 0.5)) {
             super("Tower");
             this.rate = 1000; //in ms
             this.isShooting = false;
@@ -175,11 +175,20 @@ var TowerDefense;
                 TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
             this.position = _pos;
-            this.mtr = _material;
+            this.color = _color;
+            this.mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
             this.init();
         }
         update() {
             this.follow();
+        }
+        setMaterialColor(_color) {
+            let cmpMaterial = this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary = _color;
+        }
+        resetMaterialColor() {
+            let cmpMaterial = this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary = this.color;
         }
         rotate(_rotation) {
             this.cmpTransform.local.rotate(_rotation);
@@ -215,8 +224,10 @@ var TowerDefense;
             }
         }
         init() {
+            this.mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
             this.createNodes();
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            this.addComponent(new TowerDefense.ComponentPicker(1));
         }
         createNodes() {
             let meshCube = new ƒ.MeshCube();
@@ -265,12 +276,6 @@ var TowerDefense;
                 return null;
             }
         }
-        calculateRelativeMatrix(_matrix, _relativeTo) {
-            let result;
-            result = ƒ.Matrix4x4.INVERSION(_relativeTo);
-            result = ƒ.Matrix4x4.MULTIPLICATION(result, _matrix);
-            return result;
-        }
     }
     TowerDefense.Tower = Tower;
 })(TowerDefense || (TowerDefense = {}));
@@ -295,6 +300,7 @@ var TowerDefense;
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
             // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
             // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+            this.addComponent(new TowerDefense.ComponentPicker(1));
         }
         follow() {
             let targetedEnemy1 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower Cannon")[0]);
@@ -442,6 +448,7 @@ var TowerDefense;
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
             // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
             // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+            this.addComponent(new TowerDefense.ComponentPicker(1));
         }
     }
     TowerDefense.ITowerVariant = ITowerVariant;
@@ -453,35 +460,41 @@ var TowerDefense;
     ƒ.RenderManager.initialize(true, false);
     window.addEventListener("load", hndLoad);
     TowerDefense.gridBlockSize = 4;
+    TowerDefense.towers = new ƒ.Node("towers");
     let gridX = 15;
     let gridZ = 10;
-    let blocktowerMtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)));
-    let itowerMtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)));
+    let cameraDistanze = TowerDefense.gridBlockSize * gridX * 1.3;
+    let objectIsPicked = false;
+    let selectedTower;
+    let TowerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
+    let ITowerColor = new ƒ.Color(0.4, 0.4, 0.4);
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
+        console.log(objectIsPicked);
+        console.log(selectedTower);
         let graph = new ƒ.Node("Game");
         TowerDefense.enemies = new ƒ.Node("enemies");
         graph.appendChild(TowerDefense.enemies);
+        graph.appendChild(TowerDefense.towers);
         initGrid();
         createField(graph);
         spawnEnemy();
-        let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
-        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], blocktowerMtr);
-        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], itowerMtr);
-        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], itowerMtr);
-        graph.appendChild(tower1);
-        graph.appendChild(tower2);
-        graph.appendChild(tower3);
-        graph.appendChild(tower4);
+        createTower();
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, TowerDefense.gridBlockSize * gridX * 1.3, 1));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistanze, 0.000001));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
         TowerDefense.viewport = new ƒ.Viewport();
         TowerDefense.viewport.initialize("Viewport", graph, cmpCamera, canvas);
         ƒ.Debug.log(TowerDefense.viewport);
+        TowerDefense.viewport.addEventListener("\u0192pointermove" /* MOVE */, pointerMove);
+        TowerDefense.viewport.addEventListener("\u0192pointerdown" /* DOWN */, pointerDown);
+        TowerDefense.viewport.addEventListener("\u0192pointerup" /* UP */, pointerUp);
+        TowerDefense.viewport.activatePointerEvent("\u0192pointermove" /* MOVE */, true);
+        TowerDefense.viewport.activatePointerEvent("\u0192pointerdown" /* DOWN */, true);
+        TowerDefense.viewport.activatePointerEvent("\u0192pointerup" /* UP */, true);
         ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, update);
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 30);
     }
@@ -524,6 +537,70 @@ var TowerDefense;
             TowerDefense.enemies.appendChild(enemy);
         }
     }
+    function pointerMove(_event) {
+        let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        if (objectIsPicked) {
+            let rayEnd = convertClientToView(posMouse);
+            //let projection: ƒ.Vector3 = camera.project(rayEnd);
+            console.log(rayEnd);
+            let cmpTransform = selectedTower.getComponent(ƒ.ComponentTransform);
+            cmpTransform.local.translation = rayEnd;
+            let cmpMaterial = selectedTower.getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary = ƒ.Color.CSS("red");
+        }
+    }
+    function pointerDown(_event) {
+        let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        let towerset = TowerDefense.viewport.getGraph().getChild(1).getChildren();
+        let picked = [];
+        for (let tower of towerset) {
+            let cmpPicker = tower.getComponent(TowerDefense.ComponentPicker);
+            let pickData = cmpPicker.pick(posMouse);
+            let castedTower = tower;
+            castedTower.resetMaterialColor();
+            if (pickData) {
+                objectIsPicked = true;
+                selectedTower = castedTower;
+                castedTower.setMaterialColor(ƒ.Color.CSS("red"));
+                console.log("picked");
+                picked.push({ z: pickData.clip.z, picker: cmpPicker, name: tower.name });
+            }
+        }
+        picked.sort((_a, _b) => _a.z > _b.z ? 1 : -1);
+        //pickedObjekt= picked;
+        //console.clear();
+        console.table(picked);
+        TowerDefense.viewport.draw();
+    }
+    function pointerUp(_event) {
+        for (let tower of TowerDefense.towers.getChildren()) {
+            let castedTower = tower;
+            castedTower.resetMaterialColor();
+        }
+        objectIsPicked = false;
+    }
+    function createTower() {
+        let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
+        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], TowerBlockColor);
+        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], ITowerColor);
+        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], ITowerColor);
+        TowerDefense.towers.appendChild(tower1);
+        TowerDefense.towers.appendChild(tower2);
+        TowerDefense.towers.appendChild(tower3);
+        TowerDefense.towers.appendChild(tower4);
+    }
+    function convertClientToView(_mousepos) {
+        let posProjection = TowerDefense.viewport.pointClientToProjection(_mousepos);
+        let ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
+        let camera = TowerDefense.viewport.camera;
+        ray.direction.scale(cameraDistanze - 1);
+        ray.origin.transform(camera.pivot);
+        ray.origin.transform(TowerDefense.viewport.getGraph().mtxWorld);
+        ray.direction.transform(camera.pivot, false);
+        ray.direction.transform(TowerDefense.viewport.getGraph().mtxWorld, false);
+        let rayEnd = ƒ.Vector3.SUM(ray.origin, ray.direction);
+        return rayEnd;
+    }
 })(TowerDefense || (TowerDefense = {}));
 var TowerDefense;
 (function (TowerDefense) {
@@ -562,6 +639,7 @@ var TowerDefense;
         init() {
             this.createNodes();
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            this.addComponent(new TowerDefense.ComponentPicker(2));
         }
         createNodes() {
             let meshCube = new ƒ.MeshCube();

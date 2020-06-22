@@ -10,43 +10,53 @@ namespace TowerDefense {
     export let grid: ƒ.Vector3[][];
     export let enemies: ƒ.Node;
     export let gridBlockSize: number = 4;
+    export let towers: ƒ.Node = new ƒ.Node("towers");
+
     let gridX: number = 15;
     let gridZ: number = 10;
-    let blocktowerMtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)))
-    let itowerMtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)))
+    let cameraDistanze = gridBlockSize * gridX * 1.3;
+
+    let objectIsPicked: boolean = false;
+    let selectedTower: Tower;
+
+    let TowerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
+    let ITowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
 
 
     function hndLoad(_event: Event): void {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
+        console.log(objectIsPicked);
+        console.log(selectedTower);
 
         let graph: ƒ.Node = new ƒ.Node("Game");
         enemies = new ƒ.Node("enemies");
         graph.appendChild(enemies);
+        graph.appendChild(towers);
 
         initGrid();
         createField(graph);
 
         spawnEnemy();
-        let tower1: Tower = new Tower(grid[5][1]);
-        let tower2: TowerBlock = new TowerBlock(grid[6][2], blocktowerMtr);
-        let tower3: ITower = new ITower(grid[5][5], itowerMtr);
-        let tower4: ITowerVariant= new ITowerVariant(grid[1][5], itowerMtr);
-        graph.appendChild(tower1);
-        graph.appendChild(tower2);
-        graph.appendChild(tower3);
-        graph.appendChild(tower4);
+        createTower();
 
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, gridBlockSize * gridX * 1.3, 1));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistanze, 0.000001));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
 
         viewport = new ƒ.Viewport();
         viewport.initialize("Viewport", graph, cmpCamera, canvas);
         ƒ.Debug.log(viewport);
+
+        viewport.addEventListener(ƒ.EVENT_POINTER.MOVE, pointerMove);
+        viewport.addEventListener(ƒ.EVENT_POINTER.DOWN, pointerDown);
+        viewport.addEventListener(ƒ.EVENT_POINTER.UP, pointerUp);
+        viewport.activatePointerEvent(ƒ.EVENT_POINTER.MOVE, true);
+        viewport.activatePointerEvent(ƒ.EVENT_POINTER.DOWN, true);
+        viewport.activatePointerEvent(ƒ.EVENT_POINTER.UP, true);
 
         ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, update);
         ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 30);
@@ -97,5 +107,78 @@ namespace TowerDefense {
             let enemy: Enemy = new Enemy(newPath[0], ƒ.Vector3.X(), 0.2, newPath);
             enemies.appendChild(enemy);
         }
+    }
+
+    function pointerMove(_event: ƒ.EventPointer): void {
+        let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        if (objectIsPicked) {
+
+            let rayEnd: ƒ.Vector3 = convertClientToView(posMouse);
+            //let projection: ƒ.Vector3 = camera.project(rayEnd);
+            console.log(rayEnd);
+            let cmpTransform: ƒ.ComponentTransform = selectedTower.getComponent(ƒ.ComponentTransform);
+            cmpTransform.local.translation = rayEnd;
+
+            let cmpMaterial: ƒ.ComponentMaterial = selectedTower.getComponent(ƒ.ComponentMaterial);
+            cmpMaterial.clrPrimary = ƒ.Color.CSS("red");
+        }
+    }
+
+    function pointerDown(_event: ƒ.EventPointer): void {
+        let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        let towerset: ƒ.Node[] = viewport.getGraph().getChild(1).getChildren();
+        let picked: { z: number; picker: ComponentPicker, name: string }[] = [];
+        for (let tower of towerset) {
+            let cmpPicker: ComponentPicker = tower.getComponent(ComponentPicker);
+            let pickData: PickData = cmpPicker.pick(posMouse);
+            let castedTower = <Tower>tower;
+            castedTower.resetMaterialColor();
+            if (pickData) {
+                objectIsPicked = true;
+                selectedTower = castedTower;
+                castedTower.setMaterialColor(ƒ.Color.CSS("red"));
+                console.log("picked")
+                picked.push({ z: pickData.clip.z, picker: cmpPicker, name: tower.name });
+            }
+        }
+        picked.sort((_a, _b) => _a.z > _b.z ? 1 : -1);
+        //pickedObjekt= picked;
+        //console.clear();
+        console.table(picked);
+        viewport.draw();
+    }
+
+    function pointerUp(_event: ƒ.EventPointer): void {
+        for (let tower of towers.getChildren()) {
+            let castedTower = <Tower>tower;
+            castedTower.resetMaterialColor();
+        }
+        objectIsPicked = false;
+    }
+
+    function createTower(): void {
+        let tower1: Tower = new Tower(grid[5][1]);
+        let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
+        let tower3: ITower = new ITower(grid[5][5], ITowerColor);
+        let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
+        towers.appendChild(tower1);
+        towers.appendChild(tower2);
+        towers.appendChild(tower3);
+        towers.appendChild(tower4);
+    }
+
+    function convertClientToView(_mousepos: ƒ.Vector2): ƒ.Vector3 {
+        let posProjection: ƒ.Vector2 = viewport.pointClientToProjection(_mousepos);
+        let ray: ƒ.Ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
+        let camera: ƒ.ComponentCamera = viewport.camera;
+
+        ray.direction.scale(cameraDistanze - 1);
+        ray.origin.transform(camera.pivot);
+        ray.origin.transform(viewport.getGraph().mtxWorld);
+        ray.direction.transform(camera.pivot, false);
+        ray.direction.transform(viewport.getGraph().mtxWorld, false);
+
+        let rayEnd: ƒ.Vector3 = ƒ.Vector3.SUM(ray.origin, ray.direction);
+        return rayEnd;
     }
 }
