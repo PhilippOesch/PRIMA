@@ -5,7 +5,7 @@ namespace TowerDefense {
     import ƒAid = FudgeAid;
 
     export class ITower extends Tower {
-        shootingInterval2: number;
+        shootingInterval2: NodeJS.Timeout;
         isShooting2: boolean = false;
         cannon1RelPos: ƒ.Vector3;
         cannon2RelPos: ƒ.Vector3;
