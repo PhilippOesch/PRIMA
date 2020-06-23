@@ -14,7 +14,7 @@ namespace TowerDefense {
 
     let gridX: number = 15;
     let gridZ: number = 10;
-    let cameraDistanze = gridBlockSize * gridX * 1.3;
+    let cameraDistance = gridBlockSize * gridX * 1.3;
 
     let objectIsPicked: boolean = false;
     let selectedTower: Tower;
@@ -38,12 +38,12 @@ namespace TowerDefense {
         createField(graph);
 
         spawnEnemy();
-        createTower();
+        createTowers();
 
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistanze, 0.000001));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistance, 0.000001));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
 
@@ -68,14 +68,6 @@ namespace TowerDefense {
     }
 
     function createField(_graph: ƒ.Node): void {
-        // let img: HTMLImageElement= document.querySelector("img");
-        // let txtImage: ƒ.TextureImage= new ƒ.TextureImage();
-        // txtImage.image= img;
-        // let coatTextured: ƒ.CoatTextured = new ƒ.CoatTextured();
-        // coatTextured.texture = txtImage;
-        // coatTextured.repetition= true;
-        // coatTextured.tilingX= 0.1;
-        // let material: ƒ.Material = new ƒ.Material("Textured", ƒ.ShaderTexture, coatTextured);
 
         let mesh: ƒ.MeshCube = new ƒ.MeshCube();
         let mtrPlayfield: ƒ.Material = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.5, 0)));
@@ -114,7 +106,6 @@ namespace TowerDefense {
         if (objectIsPicked) {
 
             let rayEnd: ƒ.Vector3 = convertClientToView(posMouse);
-            //let projection: ƒ.Vector3 = camera.project(rayEnd);
             console.log(rayEnd);
             let cmpTransform: ƒ.ComponentTransform = selectedTower.getComponent(ƒ.ComponentTransform);
             cmpTransform.local.translation = rayEnd;
@@ -132,7 +123,6 @@ namespace TowerDefense {
             let cmpPicker: ComponentPicker = tower.getComponent(ComponentPicker);
             let pickData: PickData = cmpPicker.pick(posMouse);
             let castedTower = <Tower>tower;
-            castedTower.resetMaterialColor();
             if (pickData) {
                 objectIsPicked = true;
                 selectedTower = castedTower;
@@ -142,21 +132,25 @@ namespace TowerDefense {
             }
         }
         picked.sort((_a, _b) => _a.z > _b.z ? 1 : -1);
-        //pickedObjekt= picked;
-        //console.clear();
+        console.clear();
         console.table(picked);
         viewport.draw();
     }
 
     function pointerUp(_event: ƒ.EventPointer): void {
-        for (let tower of towers.getChildren()) {
-            let castedTower = <Tower>tower;
-            castedTower.resetMaterialColor();
+        let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        let rayEnd: ƒ.Vector3 = convertClientToView(posMouse);
+ 
+        if(objectIsPicked){
+            selectedTower.resetMaterialColor();
+            selectedTower.snapToGrid(rayEnd);
+            selectedTower.resetMaterialColor();
         }
+
         objectIsPicked = false;
     }
 
-    function createTower(): void {
+    function createTowers(): void {
         let tower1: Tower = new Tower(grid[5][1]);
         let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
         let tower3: ITower = new ITower(grid[5][5], ITowerColor);
@@ -172,7 +166,7 @@ namespace TowerDefense {
         let ray: ƒ.Ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
         let camera: ƒ.ComponentCamera = viewport.camera;
 
-        ray.direction.scale(cameraDistanze - 1);
+        ray.direction.scale(cameraDistance - 1);
         ray.origin.transform(camera.pivot);
         ray.origin.transform(viewport.getGraph().mtxWorld);
         ray.direction.transform(camera.pivot, false);

@@ -20,7 +20,7 @@ namespace TowerDefense {
             super("Tower");
             this.position = _pos;
             this.color= _color;
-            this.mtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
+            this.mtr= new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(_color));
             this.init();
         }
 
@@ -34,12 +34,35 @@ namespace TowerDefense {
         }
 
         public resetMaterialColor(): void {
+            let newcmpMaterial: ƒ.ComponentMaterial= new ƒ.ComponentMaterial(new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color)))
             let cmpMaterial: ƒ.ComponentMaterial= this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
-            cmpMaterial.clrPrimary= this.color;
+            this.getChildrenByName("Tower Base")[0].removeComponent(cmpMaterial);
+            this.getChildrenByName("Tower Base")[0].addComponent(newcmpMaterial);
+            //cmpMaterial.clrPrimary= this.color;
         }
         
         public rotate(_rotation: ƒ.Vector3): void{
             this.cmpTransform.local.rotate(_rotation);
+        }
+
+        public snapToGrid(_pos: ƒ.Vector3): void {
+
+            let gridArray : ƒ.Vector3[] = [].concat.apply([], grid);
+            let closestGridPos: ƒ.Vector3= gridArray[0];
+
+            console.log(gridArray.length);
+            for(let i= 1; i< gridArray.length; i++){
+                let distanceVector: ƒ.Vector3= ƒ.Vector3.DIFFERENCE(_pos, gridArray[i]);
+                let currentDistanceVector: ƒ.Vector3= ƒ.Vector3.DIFFERENCE(_pos, closestGridPos);
+                let distanceSquared: number= distanceVector.magnitudeSquared;
+                let currentDistanceSquared: number= currentDistanceVector.magnitudeSquared;
+
+                if(distanceSquared< currentDistanceSquared){
+                    closestGridPos= gridArray[i];
+                }
+            }
+
+            this.cmpTransform.local.translation= closestGridPos;
         }
 
         public follow(): void {
@@ -104,7 +127,7 @@ namespace TowerDefense {
 
             let body: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp: ƒ.ComponentMesh= body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             this.appendChild(body);
 
             let cannon: ƒAid.Node= new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
@@ -147,7 +170,6 @@ namespace TowerDefense {
             } else {
                 return null;
             }
-
         }
 
     }

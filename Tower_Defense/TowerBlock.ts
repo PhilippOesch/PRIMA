@@ -4,6 +4,31 @@ namespace TowerDefense {
 
     export class TowerBlock extends Tower {
 
+        
+        public snapToGrid(_pos: ƒ.Vector3): void {
+
+            let adjustedPos= _pos.copy;
+            adjustedPos.add(new ƒ.Vector3(2,0,2));
+            let gridArray : ƒ.Vector3[] = [].concat.apply([], grid);
+            let closestGridPos: ƒ.Vector3= gridArray[0];
+
+            console.log(gridArray.length);
+            for(let i= 1; i< gridArray.length; i++){
+                let distanceVector: ƒ.Vector3= ƒ.Vector3.DIFFERENCE(adjustedPos, gridArray[i]);
+                let currentDistanceVector: ƒ.Vector3= ƒ.Vector3.DIFFERENCE(adjustedPos, closestGridPos);
+                let distanceSquared: number= distanceVector.magnitudeSquared;
+                let currentDistanceSquared: number= currentDistanceVector.magnitudeSquared;
+
+                if(distanceSquared< currentDistanceSquared){
+                    closestGridPos= gridArray[i];
+                }
+            }
+
+            let adjustgridpos= closestGridPos.copy;
+            adjustgridpos.subtract(new ƒ.Vector3(2,0,2))
+            this.cmpTransform.local.translation= adjustgridpos;
+        }
+
         protected init(): void {
             this.createNodes();
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
@@ -22,7 +47,7 @@ namespace TowerDefense {
 
             let body: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp: ƒ.ComponentMesh= body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(4, 4, 4));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(3, 4, 3));
             this.appendChild(body);
 
             let cannon: ƒAid.Node= new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(4.3)), this.mtr, meshSphere);

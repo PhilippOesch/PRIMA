@@ -102,14 +102,14 @@ namespace TowerDefense{
 
             let body: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp: ƒ.ComponentMesh= body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let bodyTransformation: ƒ.ComponentTransform = body.getComponent(ƒ.ComponentTransform);
             bodyTransformation.local.translate(this.cannon1RelPos);
             this.appendChild(body);
 
             let body2: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let body2MeshCmp: ƒ.ComponentMesh= body2.getComponent(ƒ.ComponentMesh);
-            body2MeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            body2MeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let body2Transformation: ƒ.ComponentTransform = body2.getComponent(ƒ.ComponentTransform);
             body2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(body2);

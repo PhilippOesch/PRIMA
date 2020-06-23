@@ -176,7 +176,7 @@ var TowerDefense;
             };
             this.position = _pos;
             this.color = _color;
-            this.mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color));
+            this.mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(_color));
             this.init();
         }
         update() {
@@ -187,11 +187,29 @@ var TowerDefense;
             cmpMaterial.clrPrimary = _color;
         }
         resetMaterialColor() {
+            let newcmpMaterial = new ƒ.ComponentMaterial(new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(this.color)));
             let cmpMaterial = this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
-            cmpMaterial.clrPrimary = this.color;
+            this.getChildrenByName("Tower Base")[0].removeComponent(cmpMaterial);
+            this.getChildrenByName("Tower Base")[0].addComponent(newcmpMaterial);
+            //cmpMaterial.clrPrimary= this.color;
         }
         rotate(_rotation) {
             this.cmpTransform.local.rotate(_rotation);
+        }
+        snapToGrid(_pos) {
+            let gridArray = [].concat.apply([], TowerDefense.grid);
+            let closestGridPos = gridArray[0];
+            console.log(gridArray.length);
+            for (let i = 1; i < gridArray.length; i++) {
+                let distanceVector = ƒ.Vector3.DIFFERENCE(_pos, gridArray[i]);
+                let currentDistanceVector = ƒ.Vector3.DIFFERENCE(_pos, closestGridPos);
+                let distanceSquared = distanceVector.magnitudeSquared;
+                let currentDistanceSquared = currentDistanceVector.magnitudeSquared;
+                if (distanceSquared < currentDistanceSquared) {
+                    closestGridPos = gridArray[i];
+                }
+            }
+            this.cmpTransform.local.translation = closestGridPos;
         }
         follow() {
             this.targetedEnemy = this.getClosestEnemy();
@@ -239,7 +257,7 @@ var TowerDefense;
             this.appendChild(base);
             let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             this.appendChild(body);
             let cannon = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
             let cannonMeshCmp = cannon.getComponent(ƒ.ComponentMesh);
@@ -373,13 +391,13 @@ var TowerDefense;
             this.appendChild(base);
             let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let bodyTransformation = body.getComponent(ƒ.ComponentTransform);
             bodyTransformation.local.translate(this.cannon1RelPos);
             this.appendChild(body);
             let body2 = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let body2MeshCmp = body2.getComponent(ƒ.ComponentMesh);
-            body2MeshCmp.pivot.scale(new ƒ.Vector3(2, 4, 2));
+            body2MeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let body2Transformation = body2.getComponent(ƒ.ComponentTransform);
             body2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(body2);
@@ -463,7 +481,7 @@ var TowerDefense;
     TowerDefense.towers = new ƒ.Node("towers");
     let gridX = 15;
     let gridZ = 10;
-    let cameraDistanze = TowerDefense.gridBlockSize * gridX * 1.3;
+    let cameraDistance = TowerDefense.gridBlockSize * gridX * 1.3;
     let objectIsPicked = false;
     let selectedTower;
     let TowerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
@@ -480,10 +498,10 @@ var TowerDefense;
         initGrid();
         createField(graph);
         spawnEnemy();
-        createTower();
+        createTowers();
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistanze, 0.000001));
+        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistance, 0.000001));
         cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
         cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
         TowerDefense.viewport = new ƒ.Viewport();
@@ -503,14 +521,6 @@ var TowerDefense;
         TowerDefense.viewport.draw();
     }
     function createField(_graph) {
-        // let img: HTMLImageElement= document.querySelector("img");
-        // let txtImage: ƒ.TextureImage= new ƒ.TextureImage();
-        // txtImage.image= img;
-        // let coatTextured: ƒ.CoatTextured = new ƒ.CoatTextured();
-        // coatTextured.texture = txtImage;
-        // coatTextured.repetition= true;
-        // coatTextured.tilingX= 0.1;
-        // let material: ƒ.Material = new ƒ.Material("Textured", ƒ.ShaderTexture, coatTextured);
         let mesh = new ƒ.MeshCube();
         let mtrPlayfield = new ƒ.Material("playfield", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0, 0.5, 0)));
         let field = new ƒ.Node("playfield");
@@ -541,7 +551,6 @@ var TowerDefense;
         let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         if (objectIsPicked) {
             let rayEnd = convertClientToView(posMouse);
-            //let projection: ƒ.Vector3 = camera.project(rayEnd);
             console.log(rayEnd);
             let cmpTransform = selectedTower.getComponent(ƒ.ComponentTransform);
             cmpTransform.local.translation = rayEnd;
@@ -557,7 +566,6 @@ var TowerDefense;
             let cmpPicker = tower.getComponent(TowerDefense.ComponentPicker);
             let pickData = cmpPicker.pick(posMouse);
             let castedTower = tower;
-            castedTower.resetMaterialColor();
             if (pickData) {
                 objectIsPicked = true;
                 selectedTower = castedTower;
@@ -567,19 +575,21 @@ var TowerDefense;
             }
         }
         picked.sort((_a, _b) => _a.z > _b.z ? 1 : -1);
-        //pickedObjekt= picked;
-        //console.clear();
+        console.clear();
         console.table(picked);
         TowerDefense.viewport.draw();
     }
     function pointerUp(_event) {
-        for (let tower of TowerDefense.towers.getChildren()) {
-            let castedTower = tower;
-            castedTower.resetMaterialColor();
+        let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
+        let rayEnd = convertClientToView(posMouse);
+        if (objectIsPicked) {
+            selectedTower.resetMaterialColor();
+            selectedTower.snapToGrid(rayEnd);
+            selectedTower.resetMaterialColor();
         }
         objectIsPicked = false;
     }
-    function createTower() {
+    function createTowers() {
         let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
         let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], TowerBlockColor);
         let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], ITowerColor);
@@ -593,7 +603,7 @@ var TowerDefense;
         let posProjection = TowerDefense.viewport.pointClientToProjection(_mousepos);
         let ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
         let camera = TowerDefense.viewport.camera;
-        ray.direction.scale(cameraDistanze - 1);
+        ray.direction.scale(cameraDistance - 1);
         ray.origin.transform(camera.pivot);
         ray.origin.transform(TowerDefense.viewport.getGraph().mtxWorld);
         ray.direction.transform(camera.pivot, false);
@@ -636,6 +646,25 @@ var TowerDefense;
                 TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
         }
+        snapToGrid(_pos) {
+            let adjustedPos = _pos.copy;
+            adjustedPos.add(new ƒ.Vector3(2, 0, 2));
+            let gridArray = [].concat.apply([], TowerDefense.grid);
+            let closestGridPos = gridArray[0];
+            console.log(gridArray.length);
+            for (let i = 1; i < gridArray.length; i++) {
+                let distanceVector = ƒ.Vector3.DIFFERENCE(adjustedPos, gridArray[i]);
+                let currentDistanceVector = ƒ.Vector3.DIFFERENCE(adjustedPos, closestGridPos);
+                let distanceSquared = distanceVector.magnitudeSquared;
+                let currentDistanceSquared = currentDistanceVector.magnitudeSquared;
+                if (distanceSquared < currentDistanceSquared) {
+                    closestGridPos = gridArray[i];
+                }
+            }
+            let adjustgridpos = closestGridPos.copy;
+            adjustgridpos.subtract(new ƒ.Vector3(2, 0, 2));
+            this.cmpTransform.local.translation = adjustgridpos;
+        }
         init() {
             this.createNodes();
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
@@ -651,7 +680,7 @@ var TowerDefense;
             this.appendChild(base);
             let body = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
             let bodyMeshCmp = body.getComponent(ƒ.ComponentMesh);
-            bodyMeshCmp.pivot.scale(new ƒ.Vector3(4, 4, 4));
+            bodyMeshCmp.pivot.scale(new ƒ.Vector3(3, 4, 3));
             this.appendChild(body);
             let cannon = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(4.3)), this.mtr, meshSphere);
             let cannonMeshCmp = cannon.getComponent(ƒ.ComponentMesh);
