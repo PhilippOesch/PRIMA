@@ -9,7 +9,7 @@ namespace TowerDefense {
 
         protected position: ƒ.Vector3;
         protected rate: number = 1000; //in ms
-        protected shootingInterval: NodeJS.Timeout;
+        protected shootingInterval: any;
         protected isShooting: boolean = false;
         protected range: number = 14;
         protected targetedEnemy: Enemy;
