@@ -14,13 +14,13 @@ namespace TowerDefense {
 
     let gridX: number = 15;
     let gridZ: number = 10;
-    let cameraDistance = gridBlockSize * gridX * 1.3;
+    let cameraDistance: number = gridBlockSize * gridX * 1.3;
 
     let objectIsPicked: boolean = false;
     let selectedTower: Tower;
 
-    let TowerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
-    let ITowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
+    let towerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
+    let iTowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
 
 
     function hndLoad(_event: Event): void {
@@ -122,7 +122,7 @@ namespace TowerDefense {
         for (let tower of towerset) {
             let cmpPicker: ComponentPicker = tower.getComponent(ComponentPicker);
             let pickData: PickData = cmpPicker.pick(posMouse);
-            let castedTower = <Tower>tower;
+            let castedTower: Tower = <Tower>tower;
             if (pickData) {
                 objectIsPicked = true;
                 selectedTower = castedTower;
@@ -152,9 +152,9 @@ namespace TowerDefense {
 
     function createTowers(): void {
         let tower1: Tower = new Tower(grid[5][1]);
-        let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
-        let tower3: ITower = new ITower(grid[5][5], ITowerColor);
-        let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
+        let tower2: TowerBlock = new TowerBlock(grid[6][2], towerBlockColor);
+        let tower3: ITower = new ITower(grid[5][5], iTowerColor);
+        let tower4: ITowerVariant = new ITowerVariant(grid[1][5], iTowerColor);
         towers.appendChild(tower1);
         towers.appendChild(tower2);
         towers.appendChild(tower3);
@@ -168,9 +168,9 @@ namespace TowerDefense {
 
         ray.direction.scale(cameraDistance - 1);
         ray.origin.transform(camera.pivot);
-        ray.origin.transform(viewport.getGraph().mtxWorld);
+        // ray.origin.transform(viewport.getGraph().mtxWorld);
         ray.direction.transform(camera.pivot, false);
-        ray.direction.transform(viewport.getGraph().mtxWorld, false);
+        //ray.direction.transform(viewport.getGraph().mtxWorld, false);
 
         let rayEnd: ƒ.Vector3 = ƒ.Vector3.SUM(ray.origin, ray.direction);
         return rayEnd;

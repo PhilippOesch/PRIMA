@@ -1,29 +1,16 @@
 /// <reference path="Tower.ts"/>
 
-namespace TowerDefense{
+namespace TowerDefense {
     import ƒ = FudgeCore;
     import ƒAid = FudgeAid;
 
-    export class ITower extends Tower{
+    export class ITower extends Tower {
         shootingInterval2: number;
-        isShooting2: boolean= false;
+        isShooting2: boolean = false;
         cannon1RelPos: ƒ.Vector3;
         cannon2RelPos: ƒ.Vector3;
         protected xScale: number;
         protected zScale: number;
-
-        protected init(): void {
-            this.range= 12;
-            this.cannon1RelPos= ƒ.Vector3.X(-4);
-            this.cannon2RelPos= ƒ.Vector3.X(4);
-            this.xScale= 12;
-            this.zScale= 4;
-            this.createNodes();
-            ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
-            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
-            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
-            this.addComponent(new ComponentPicker(1));
-        }
 
         public follow(): void {
 
@@ -47,7 +34,7 @@ namespace TowerDefense{
                         cannon1.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
                     if (!this.isShooting) {
-                        this.shootingInterval = setInterval(()=> this.fireProjectile(cannon1, targetedEnemy1), this.rate);
+                        this.shootingInterval = setInterval(() => this.fireProjectile(cannon1, targetedEnemy1), this.rate);
                         this.isShooting = true;
                     }
                 } else {
@@ -61,7 +48,7 @@ namespace TowerDefense{
                 clearInterval(this.shootingInterval);
             }
 
-            
+
             if (targetedEnemy2 != undefined) {
                 let distanceSquare2: number = ƒ.Vector3.DIFFERENCE(cannon2.mtxWorld.translation, targetedEnemy2.mtxWorld.translation).magnitudeSquared;
 
@@ -74,7 +61,7 @@ namespace TowerDefense{
                         cannon2.mtxLocal.lookAt(enemyPos, ƒ.Vector3.Y());
                     }
                     if (!this.isShooting2) {
-                        this.shootingInterval2 = setInterval(()=> this.fireProjectile(cannon2, targetedEnemy2), this.rate);
+                        this.shootingInterval2 = setInterval(() => this.fireProjectile(cannon2, targetedEnemy2), this.rate);
                         this.isShooting2 = true;
                     }
                 } else {
@@ -89,52 +76,63 @@ namespace TowerDefense{
             }
         }
 
+        protected init(): void {
+            this.range = 12;
+            this.cannon1RelPos = ƒ.Vector3.X(-4);
+            this.cannon2RelPos = ƒ.Vector3.X(4);
+            this.xScale = 12;
+            this.zScale = 4;
+            this.createNodes();
+            ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+            this.addComponent(new ComponentPicker(1));
+        }
+
         protected createNodes(): void {
             let meshCube: ƒ.MeshCube = new ƒ.MeshCube();
             //let meshPyramid: ƒ.MeshPyramid= new ƒ.MeshPyramid();
             let meshSphere: ƒ.MeshSphere = new ƒ.MeshSphere();
             let mtrCannon: ƒ.Material = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(new ƒ.Color(0.2, 0.2, 0.2)));
 
-            let base: ƒAid.Node= new ƒAid.Node("Tower Base", ƒ.Matrix4x4.IDENTITY(), this.mtr, meshCube);
-            let baseMeshCmp: ƒ.ComponentMesh= base.getComponent(ƒ.ComponentMesh);
+            let base: ƒAid.Node = new ƒAid.Node("Tower Base", ƒ.Matrix4x4.IDENTITY(), this.mtr, meshCube);
+            let baseMeshCmp: ƒ.ComponentMesh = base.getComponent(ƒ.ComponentMesh);
             baseMeshCmp.pivot.scale(new ƒ.Vector3(this.xScale, 0.5, this.zScale));
             this.appendChild(base);
 
-            let body: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
-            let bodyMeshCmp: ƒ.ComponentMesh= body.getComponent(ƒ.ComponentMesh);
+            let body: ƒAid.Node = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let bodyMeshCmp: ƒ.ComponentMesh = body.getComponent(ƒ.ComponentMesh);
             bodyMeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let bodyTransformation: ƒ.ComponentTransform = body.getComponent(ƒ.ComponentTransform);
             bodyTransformation.local.translate(this.cannon1RelPos);
             this.appendChild(body);
 
-            let body2: ƒAid.Node= new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
-            let body2MeshCmp: ƒ.ComponentMesh= body2.getComponent(ƒ.ComponentMesh);
+            let body2: ƒAid.Node = new ƒAid.Node("Tower Body", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(0.5)), this.mtr, meshCube);
+            let body2MeshCmp: ƒ.ComponentMesh = body2.getComponent(ƒ.ComponentMesh);
             body2MeshCmp.pivot.scale(new ƒ.Vector3(1.5, 4, 1.5));
             let body2Transformation: ƒ.ComponentTransform = body2.getComponent(ƒ.ComponentTransform);
             body2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(body2);
 
-            let cannon: ƒAid.Node= new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
-            let cannonMeshCmp: ƒ.ComponentMesh= cannon.getComponent(ƒ.ComponentMesh);
+            let cannon: ƒAid.Node = new ƒAid.Node("Tower Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
+            let cannonMeshCmp: ƒ.ComponentMesh = cannon.getComponent(ƒ.ComponentMesh);
             cannonMeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
-            let cannonTransformation: ƒ.ComponentTransform= cannon.getComponent(ƒ.ComponentTransform);
+            let cannonTransformation: ƒ.ComponentTransform = cannon.getComponent(ƒ.ComponentTransform);
             cannonTransformation.local.translate(this.cannon1RelPos);
             this.appendChild(cannon);
 
-            let cannon2: ƒAid.Node= new ƒAid.Node("Tower2 Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
-            let cannon2MeshCmp: ƒ.ComponentMesh= cannon2.getComponent(ƒ.ComponentMesh);
+            let cannon2: ƒAid.Node = new ƒAid.Node("Tower2 Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Y(3.3)), this.mtr, meshSphere);
+            let cannon2MeshCmp: ƒ.ComponentMesh = cannon2.getComponent(ƒ.ComponentMesh);
             cannon2MeshCmp.pivot.scale(ƒ.Vector3.ONE(2));
-            let cannon2Transformation: ƒ.ComponentTransform= cannon2.getComponent(ƒ.ComponentTransform);
+            let cannon2Transformation: ƒ.ComponentTransform = cannon2.getComponent(ƒ.ComponentTransform);
             cannon2Transformation.local.translate(this.cannon2RelPos);
             this.appendChild(cannon2);
 
-            let cannonBarrel: ƒAid.Node= new ƒAid.Node("Canon Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
-            let cannonBarrelMeshCmp: ƒ.ComponentMesh= cannonBarrel.getComponent(ƒ.ComponentMesh);
+            let cannonBarrel: ƒAid.Node = new ƒAid.Node("Canon Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannonBarrelMeshCmp: ƒ.ComponentMesh = cannonBarrel.getComponent(ƒ.ComponentMesh);
             cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
             cannon.appendChild(cannonBarrel);
 
-            let cannon2Barrel: ƒAid.Node= new ƒAid.Node("Canon2 Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
-            let cannon2BarrelMeshCmp: ƒ.ComponentMesh= cannon2Barrel.getComponent(ƒ.ComponentMesh);
+            let cannon2Barrel: ƒAid.Node = new ƒAid.Node("Canon2 Barrel", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(1)), mtrCannon, meshCube);
+            let cannon2BarrelMeshCmp: ƒ.ComponentMesh = cannon2Barrel.getComponent(ƒ.ComponentMesh);
             cannon2BarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
             cannon2.appendChild(cannon2Barrel);
 
@@ -142,7 +140,7 @@ namespace TowerDefense{
             this.addComponent(towerTransformation);
         }
 
-        
+
         protected getClosestEnemyOfNode(_node: ƒ.Node): Enemy {
             let enemiesArray: Array<Enemy> = enemies.getChildren().map((value) => {
                 return <Enemy>value;

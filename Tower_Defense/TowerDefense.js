@@ -308,18 +308,6 @@ var TowerDefense;
             super(...arguments);
             this.isShooting2 = false;
         }
-        init() {
-            this.range = 12;
-            this.cannon1RelPos = ƒ.Vector3.X(-4);
-            this.cannon2RelPos = ƒ.Vector3.X(4);
-            this.xScale = 12;
-            this.zScale = 4;
-            this.createNodes();
-            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
-            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
-            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
-            this.addComponent(new TowerDefense.ComponentPicker(1));
-        }
         follow() {
             let targetedEnemy1 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower Cannon")[0]);
             let targetedEnemy2 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower2 Cannon")[0]);
@@ -379,6 +367,16 @@ var TowerDefense;
                 this.isShooting2 = false;
                 clearInterval(this.shootingInterval2);
             }
+        }
+        init() {
+            this.range = 12;
+            this.cannon1RelPos = ƒ.Vector3.X(-4);
+            this.cannon2RelPos = ƒ.Vector3.X(4);
+            this.xScale = 12;
+            this.zScale = 4;
+            this.createNodes();
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            this.addComponent(new TowerDefense.ComponentPicker(1));
         }
         createNodes() {
             let meshCube = new ƒ.MeshCube();
@@ -484,8 +482,8 @@ var TowerDefense;
     let cameraDistance = TowerDefense.gridBlockSize * gridX * 1.3;
     let objectIsPicked = false;
     let selectedTower;
-    let TowerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
-    let ITowerColor = new ƒ.Color(0.4, 0.4, 0.4);
+    let towerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
+    let iTowerColor = new ƒ.Color(0.4, 0.4, 0.4);
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
@@ -591,9 +589,9 @@ var TowerDefense;
     }
     function createTowers() {
         let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
-        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], TowerBlockColor);
-        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], ITowerColor);
-        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], ITowerColor);
+        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], towerBlockColor);
+        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], iTowerColor);
+        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], iTowerColor);
         TowerDefense.towers.appendChild(tower1);
         TowerDefense.towers.appendChild(tower2);
         TowerDefense.towers.appendChild(tower3);
@@ -605,9 +603,9 @@ var TowerDefense;
         let camera = TowerDefense.viewport.camera;
         ray.direction.scale(cameraDistance - 1);
         ray.origin.transform(camera.pivot);
-        ray.origin.transform(TowerDefense.viewport.getGraph().mtxWorld);
+        // ray.origin.transform(viewport.getGraph().mtxWorld);
         ray.direction.transform(camera.pivot, false);
-        ray.direction.transform(TowerDefense.viewport.getGraph().mtxWorld, false);
+        //ray.direction.transform(viewport.getGraph().mtxWorld, false);
         let rayEnd = ƒ.Vector3.SUM(ray.origin, ray.direction);
         return rayEnd;
     }
