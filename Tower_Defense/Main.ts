@@ -14,7 +14,7 @@ namespace TowerDefense {
 
     let gridX: number = 15;
     let gridZ: number = 10;
-    let cameraDistance = gridBlockSize * gridX * 1.3;
+    let cameraDistance = gridBlockSize * gridX * 1.5;
 
     let objectIsPicked: boolean = false;
     let selectedTower: Tower;
@@ -22,6 +22,7 @@ namespace TowerDefense {
     let TowerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
     let ITowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
 
+    let towerSelectionPositions: ƒ.Vector3[]= new Array<ƒ.Vector3>();
 
     function hndLoad(_event: Event): void {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
@@ -43,9 +44,10 @@ namespace TowerDefense {
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistance, 0.000001));
-        cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
-        cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
+        cmpCamera.pivot.translate(new ƒ.Vector3(8, cameraDistance, 0.000001));
+        let cameraLookAt: ƒ.Vector3= new ƒ.Vector3(8, 0, 0)
+        cmpCamera.pivot.lookAt(cameraLookAt);
+        cmpCamera.backgroundColor = ƒ.Color.CSS("white");
 
         viewport = new ƒ.Viewport();
         viewport.initialize("Viewport", graph, cmpCamera, canvas);
@@ -123,7 +125,7 @@ namespace TowerDefense {
             let cmpPicker: ComponentPicker = tower.getComponent(ComponentPicker);
             let pickData: PickData = cmpPicker.pick(posMouse);
             let castedTower = <Tower>tower;
-            if (pickData) {
+            if (pickData && !castedTower.towerActive) {
                 objectIsPicked = true;
                 selectedTower = castedTower;
                 castedTower.setMaterialColor(ƒ.Color.CSS("red"));
@@ -151,10 +153,21 @@ namespace TowerDefense {
     }
 
     function createTowers(): void {
-        let tower1: Tower = new Tower(grid[5][1]);
-        let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
-        let tower3: ITower = new ITower(grid[5][5], ITowerColor);
-        let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
+        for(let i= 0; i<4; i++){
+            towerSelectionPositions.push(new ƒ.Vector3(((gridX*gridBlockSize)/2+ gridBlockSize*3), 1, (gridZ* gridBlockSize/2)-(i*10)));
+        }
+
+        // let tower1: Tower = new Tower(grid[5][1]);
+        // let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
+        // let tower3: ITower = new ITower(grid[5][5], ITowerColor);
+        // let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
+
+        let tower1: Tower = new Tower(towerSelectionPositions[0]);
+        let btowerPos: ƒ.Vector3= towerSelectionPositions[1].copy;
+        btowerPos.subtract(new ƒ.Vector3(gridBlockSize/2, 0, gridBlockSize/2))
+        let tower2: TowerBlock = new TowerBlock(btowerPos, TowerBlockColor);
+        let tower3: ITower = new ITower(towerSelectionPositions[2], ITowerColor);
+        let tower4: ITowerVariant = new ITowerVariant(towerSelectionPositions[3], ITowerColor);
         towers.appendChild(tower1);
         towers.appendChild(tower2);
         towers.appendChild(tower3);

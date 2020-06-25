@@ -27,6 +27,8 @@ namespace TowerDefense {
             let adjustgridpos= closestGridPos.copy;
             adjustgridpos.subtract(new ƒ.Vector3(2,0,2))
             this.cmpTransform.local.translation= adjustgridpos;
+
+            this.towerActive= true;
         }
 
         protected init(): void {

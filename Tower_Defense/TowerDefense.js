@@ -166,6 +166,7 @@ var TowerDefense;
     class Tower extends ƒ.Node {
         constructor(_pos, _color = new ƒ.Color(0.5, 0.5, 0.5)) {
             super("Tower");
+            this.towerActive = false;
             this.rate = 1000; //in ms
             this.isShooting = false;
             this.range = 14;
@@ -180,7 +181,9 @@ var TowerDefense;
             this.init();
         }
         update() {
-            this.follow();
+            if (this.towerActive) {
+                this.follow();
+            }
         }
         setMaterialColor(_color) {
             let cmpMaterial = this.getChildrenByName("Tower Base")[0].getComponent(ƒ.ComponentMaterial);
@@ -210,6 +213,7 @@ var TowerDefense;
                 }
             }
             this.cmpTransform.local.translation = closestGridPos;
+            this.towerActive = true;
         }
         follow() {
             this.targetedEnemy = this.getClosestEnemy();
@@ -481,11 +485,12 @@ var TowerDefense;
     TowerDefense.towers = new ƒ.Node("towers");
     let gridX = 15;
     let gridZ = 10;
-    let cameraDistance = TowerDefense.gridBlockSize * gridX * 1.3;
+    let cameraDistance = TowerDefense.gridBlockSize * gridX * 1.5;
     let objectIsPicked = false;
     let selectedTower;
     let TowerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
     let ITowerColor = new ƒ.Color(0.4, 0.4, 0.4);
+    let towerSelectionPositions = new Array();
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
         ƒ.Debug.log(canvas);
@@ -501,9 +506,10 @@ var TowerDefense;
         createTowers();
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(0, cameraDistance, 0.000001));
-        cmpCamera.pivot.lookAt(ƒ.Vector3.ZERO());
-        cmpCamera.backgroundColor = ƒ.Color.CSS("PaleTurquoise");
+        cmpCamera.pivot.translate(new ƒ.Vector3(8, cameraDistance, 0.000001));
+        let cameraLookAt = new ƒ.Vector3(8, 0, 0);
+        cmpCamera.pivot.lookAt(cameraLookAt);
+        cmpCamera.backgroundColor = ƒ.Color.CSS("white");
         TowerDefense.viewport = new ƒ.Viewport();
         TowerDefense.viewport.initialize("Viewport", graph, cmpCamera, canvas);
         ƒ.Debug.log(TowerDefense.viewport);
@@ -566,7 +572,7 @@ var TowerDefense;
             let cmpPicker = tower.getComponent(TowerDefense.ComponentPicker);
             let pickData = cmpPicker.pick(posMouse);
             let castedTower = tower;
-            if (pickData) {
+            if (pickData && !castedTower.towerActive) {
                 objectIsPicked = true;
                 selectedTower = castedTower;
                 castedTower.setMaterialColor(ƒ.Color.CSS("red"));
@@ -590,10 +596,19 @@ var TowerDefense;
         objectIsPicked = false;
     }
     function createTowers() {
-        let tower1 = new TowerDefense.Tower(TowerDefense.grid[5][1]);
-        let tower2 = new TowerDefense.TowerBlock(TowerDefense.grid[6][2], TowerBlockColor);
-        let tower3 = new TowerDefense.ITower(TowerDefense.grid[5][5], ITowerColor);
-        let tower4 = new TowerDefense.ITowerVariant(TowerDefense.grid[1][5], ITowerColor);
+        for (let i = 0; i < 4; i++) {
+            towerSelectionPositions.push(new ƒ.Vector3(((gridX * TowerDefense.gridBlockSize) / 2 + TowerDefense.gridBlockSize * 3), 1, (gridZ * TowerDefense.gridBlockSize / 2) - (i * 10)));
+        }
+        // let tower1: Tower = new Tower(grid[5][1]);
+        // let tower2: TowerBlock = new TowerBlock(grid[6][2], TowerBlockColor);
+        // let tower3: ITower = new ITower(grid[5][5], ITowerColor);
+        // let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
+        let tower1 = new TowerDefense.Tower(towerSelectionPositions[0]);
+        let btowerPos = towerSelectionPositions[1].copy;
+        btowerPos.subtract(new ƒ.Vector3(TowerDefense.gridBlockSize / 2, 0, TowerDefense.gridBlockSize / 2));
+        let tower2 = new TowerDefense.TowerBlock(btowerPos, TowerBlockColor);
+        let tower3 = new TowerDefense.ITower(towerSelectionPositions[2], ITowerColor);
+        let tower4 = new TowerDefense.ITowerVariant(towerSelectionPositions[3], ITowerColor);
         TowerDefense.towers.appendChild(tower1);
         TowerDefense.towers.appendChild(tower2);
         TowerDefense.towers.appendChild(tower3);
@@ -664,6 +679,7 @@ var TowerDefense;
             let adjustgridpos = closestGridPos.copy;
             adjustgridpos.subtract(new ƒ.Vector3(2, 0, 2));
             this.cmpTransform.local.translation = adjustgridpos;
+            this.towerActive = true;
         }
         init() {
             this.createNodes();

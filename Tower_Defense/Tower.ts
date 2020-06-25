@@ -5,7 +5,8 @@ namespace TowerDefense {
     import ƒAid = FudgeAid;
 
     export class Tower extends ƒ.Node {
-        mtr: ƒ.Material;
+        public mtr: ƒ.Material;
+        public towerActive: boolean= false
 
         protected position: ƒ.Vector3;
         protected rate: number = 1000; //in ms
@@ -25,7 +26,9 @@ namespace TowerDefense {
         }
 
         public update(): void {
+            if(this.towerActive){
             this.follow();
+            }
         }
 
         public setMaterialColor(_color: ƒ.Color): void{
@@ -63,6 +66,8 @@ namespace TowerDefense {
             }
 
             this.cmpTransform.local.translation= closestGridPos;
+
+            this.towerActive= true;
         }
 
         public follow(): void {
