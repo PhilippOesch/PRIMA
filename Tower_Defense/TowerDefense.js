@@ -49,7 +49,7 @@ var TowerDefense;
             super("Enemy");
             this.nextWaypoint = 0;
             this.health = 1;
-            this.armor = 0.2; //Faktor for Damage Reduktion, closer to 0 means less Damage
+            this.armor = 0.4; //Faktor for Damage Reduktion, closer to 0 means less Damage
             this.isDead = false;
             this.speed = _speed;
             this.startingPosition = _pos;
@@ -74,19 +74,37 @@ var TowerDefense;
             if (!(this.nextWaypoint == this.path.length)) {
                 this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(move, distanceToTravel));
             }
-            else {
-                TowerDefense.enemies.removeChild(this);
+            else if (this.healtBarContainer != null && this.healtBar != null) {
+                this.removeEnemy();
             }
+            this.updateHealthbar();
         }
         calculateDamage(_projectile) {
             this.health -= (_projectile.strength * this.armor);
             if (this.health <= 0 && !this.isDead) {
-                TowerDefense.enemies.removeChild(this);
+                this.removeEnemy();
                 this.isDead = true;
+            }
+        }
+        removeEnemy() {
+            document.body.removeChild(this.healtBarContainer);
+            this.healtBarContainer = null;
+            this.healtBar = null;
+            TowerDefense.enemies.removeChild(this);
+        }
+        updateHealthbar() {
+            let currentPos = this.mtxWorld.translation.copy;
+            let client = this.convertVector3ToClient(currentPos);
+            if (this.healtBarContainer != null && this.healtBar != null) {
+                this.healtBarContainer.style.left = client.x + "px";
+                this.healtBarContainer.style.top = client.y + "px";
+                let healtbarwidth = Math.floor(60 * this.health);
+                this.healtBar.style.width = healtbarwidth + "px";
             }
         }
         init() {
             this.createNodes();
+            this.createHealthbar();
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
         }
         createNodes() {
@@ -99,6 +117,21 @@ var TowerDefense;
             this.appendChild(head);
             let enemyTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.startingPosition));
             this.addComponent(enemyTransformation);
+        }
+        createHealthbar() {
+            this.healtBarContainer = document.createElement("div");
+            this.healtBar = document.createElement("div");
+            this.healtBar.classList.add("healthbar");
+            this.healtBarContainer.appendChild(this.healtBar);
+            this.healtBarContainer.classList.add("healthbar-container");
+            console.log(this.healtBarContainer);
+            document.body.appendChild(this.healtBarContainer);
+        }
+        convertVector3ToClient(_pos) {
+            let camera = TowerDefense.viewport.camera;
+            let projection = camera.project(_pos);
+            let screen = TowerDefense.viewport.pointClipToClient(projection.toVector2());
+            return screen;
         }
     }
     TowerDefense.Enemy = Enemy;
@@ -175,7 +208,7 @@ var TowerDefense;
                 let newProjectile = new TowerDefense.Projectile(startingPos.translation.copy, _enemy);
                 TowerDefense.viewport.getGraph().appendChild(newProjectile);
             };
-            this.position = _pos;
+            this.originalposition = _pos;
             this.color = _color;
             this.mtr = new ƒ.Material("towerMtr", ƒ.ShaderFlat, new ƒ.CoatColored(_color));
             this.init();
@@ -212,8 +245,18 @@ var TowerDefense;
                     closestGridPos = gridArray[i];
                 }
             }
-            this.cmpTransform.local.translation = closestGridPos;
-            this.towerActive = true;
+            let scaling = this.getTowerBase().getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            if (ƒ.Vector3.DIFFERENCE(_pos, closestGridPos).magnitudeSquared < TowerDefense.gridBlockSize ** 2 && !this.checkCollisionWithOtherTowers(closestGridPos, scaling)) {
+                this.cmpTransform.local.translation = closestGridPos;
+                this.towerActive = true;
+                TowerDefense.spawnNewTower(this.originalposition);
+            }
+            else {
+                this.cmpTransform.local.translation = this.originalposition;
+            }
+        }
+        getTowerBase() {
+            return this.getChildrenByName("Tower Base")[0];
         }
         follow() {
             this.targetedEnemy = this.getClosestEnemy();
@@ -271,7 +314,7 @@ var TowerDefense;
             let cannonBarrelMeshCmp = cannonBarrel.getComponent(ƒ.ComponentMesh);
             cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
             cannon.appendChild(cannonBarrel);
-            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.position));
+            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.originalposition));
             this.addComponent(towerTransformation);
         }
         getClosestEnemy() {
@@ -298,6 +341,51 @@ var TowerDefense;
                 return null;
             }
         }
+        checkCollisionWithOtherTowers(_pos, _scaling) {
+            // let graphtowers: ƒ.Node[] = towers.getChildren();
+            // let corner1: ƒ.Vector3 = _pos.copy;
+            // let corner2: ƒ.Vector3 = _pos.copy;
+            // let halfscaling= ƒ.Vector3.NORMALIZATION(scaling, 0.5);
+            // corner1.subtract(halfscaling);
+            // corner2.add(halfscaling);
+            // let isColliding: boolean = false;
+            // for (let tower of graphtowers) {
+            //     if (tower.mtxWorld.translation.isInsideCube(corner1, corner2))
+            //         isColliding = true;
+            // }
+            // return isColliding;
+            let graphtowers = TowerDefense.towers.getChildren().map(val => val);
+            let isColliding = false;
+            for (let tower of graphtowers) {
+                if (tower.checkCollisionWithTower(_pos, _scaling) && tower != this) {
+                    isColliding = true;
+                }
+            }
+            return isColliding;
+        }
+        checkCollisionWithTower(_pos, _scaling) {
+            let thisTowerScaling = this.getTowerBase().getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            let thisTowerTranslation = this.getTowerBase().mtxWorld.translation;
+            console.log(thisTowerTranslation);
+            let otherTowerScaling = _scaling.copy;
+            let otherTowerTranslation = _pos.copy;
+            console.log(otherTowerTranslation);
+            let minXThis = thisTowerTranslation.x - thisTowerScaling.x / 2;
+            let minYThis = thisTowerTranslation.y - thisTowerScaling.y / 2;
+            let minZThis = thisTowerTranslation.z - thisTowerScaling.z / 2;
+            let maxXThis = thisTowerTranslation.x + thisTowerScaling.x / 2;
+            let maxYThis = thisTowerTranslation.y + thisTowerScaling.y / 2;
+            let maxZThis = thisTowerTranslation.z + thisTowerScaling.z / 2;
+            let minXOther = otherTowerTranslation.x - otherTowerScaling.x / 2;
+            let minYOther = otherTowerTranslation.y - otherTowerScaling.y / 2;
+            let minZOther = otherTowerTranslation.z - otherTowerScaling.z / 2;
+            let maxXOther = otherTowerTranslation.x + otherTowerScaling.x / 2;
+            let maxYOther = otherTowerTranslation.y + otherTowerScaling.y / 2;
+            let maxZOther = otherTowerTranslation.z + otherTowerScaling.z / 2;
+            return (minXThis < maxXOther && maxXThis > minXOther) &&
+                (minYThis < maxYOther && maxYThis > minYOther) &&
+                (minZThis < maxZOther && maxZThis > minZOther);
+        }
     }
     TowerDefense.Tower = Tower;
 })(TowerDefense || (TowerDefense = {}));
@@ -311,18 +399,6 @@ var TowerDefense;
         constructor() {
             super(...arguments);
             this.isShooting2 = false;
-        }
-        init() {
-            this.range = 12;
-            this.cannon1RelPos = ƒ.Vector3.X(-4);
-            this.cannon2RelPos = ƒ.Vector3.X(4);
-            this.xScale = 12;
-            this.zScale = 4;
-            this.createNodes();
-            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
-            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
-            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
-            this.addComponent(new TowerDefense.ComponentPicker(1));
         }
         follow() {
             let targetedEnemy1 = this.getClosestEnemyOfNode(this.getChildrenByName("Tower Cannon")[0]);
@@ -384,6 +460,18 @@ var TowerDefense;
                 clearInterval(this.shootingInterval2);
             }
         }
+        init() {
+            this.range = 12;
+            this.cannon1RelPos = ƒ.Vector3.X(-4);
+            this.cannon2RelPos = ƒ.Vector3.X(4);
+            this.xScale = 12;
+            this.zScale = 4;
+            this.createNodes();
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
+            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+            this.addComponent(new TowerDefense.ComponentPicker(1));
+        }
         createNodes() {
             let meshCube = new ƒ.MeshCube();
             //let meshPyramid: ƒ.MeshPyramid= new ƒ.MeshPyramid();
@@ -425,7 +513,7 @@ var TowerDefense;
             let cannon2BarrelMeshCmp = cannon2Barrel.getComponent(ƒ.ComponentMesh);
             cannon2BarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
             cannon2.appendChild(cannon2Barrel);
-            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.position));
+            let towerTransformation = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.originalposition));
             this.addComponent(towerTransformation);
         }
         getClosestEnemyOfNode(_node) {
@@ -485,11 +573,11 @@ var TowerDefense;
     TowerDefense.towers = new ƒ.Node("towers");
     let gridX = 15;
     let gridZ = 10;
-    let cameraDistance = TowerDefense.gridBlockSize * gridX * 1.5;
+    TowerDefense.cameraDistance = TowerDefense.gridBlockSize * gridX * 1.5;
     let objectIsPicked = false;
     let selectedTower;
-    let TowerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
-    let ITowerColor = new ƒ.Color(0.4, 0.4, 0.4);
+    let towerBlockColor = new ƒ.Color(0.3, 0.3, 0.3);
+    let iTowerColor = new ƒ.Color(0.4, 0.4, 0.4);
     let towerSelectionPositions = new Array();
     function hndLoad(_event) {
         const canvas = document.querySelector("canvas");
@@ -506,7 +594,7 @@ var TowerDefense;
         createTowers();
         ƒAid.addStandardLightComponents(graph, new ƒ.Color(0.6, 0.6, 0.6));
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(new ƒ.Vector3(8, cameraDistance, 0.000001));
+        cmpCamera.pivot.translate(new ƒ.Vector3(8, TowerDefense.cameraDistance, 0.000001));
         let cameraLookAt = new ƒ.Vector3(8, 0, 0);
         cmpCamera.pivot.lookAt(cameraLookAt);
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
@@ -556,7 +644,7 @@ var TowerDefense;
     function pointerMove(_event) {
         let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         if (objectIsPicked) {
-            let rayEnd = convertClientToView(posMouse);
+            let rayEnd = convertClientToRay(posMouse);
             console.log(rayEnd);
             let cmpTransform = selectedTower.getComponent(ƒ.ComponentTransform);
             cmpTransform.local.translation = rayEnd;
@@ -587,7 +675,7 @@ var TowerDefense;
     }
     function pointerUp(_event) {
         let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
-        let rayEnd = convertClientToView(posMouse);
+        let rayEnd = convertClientToRay(posMouse);
         if (objectIsPicked) {
             selectedTower.resetMaterialColor();
             selectedTower.snapToGrid(rayEnd);
@@ -605,20 +693,20 @@ var TowerDefense;
         // let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
         let tower1 = new TowerDefense.Tower(towerSelectionPositions[0]);
         let btowerPos = towerSelectionPositions[1].copy;
-        btowerPos.subtract(new ƒ.Vector3(TowerDefense.gridBlockSize / 2, 0, TowerDefense.gridBlockSize / 2));
-        let tower2 = new TowerDefense.TowerBlock(btowerPos, TowerBlockColor);
-        let tower3 = new TowerDefense.ITower(towerSelectionPositions[2], ITowerColor);
-        let tower4 = new TowerDefense.ITowerVariant(towerSelectionPositions[3], ITowerColor);
+        //btowerPos.subtract(new ƒ.Vector3(gridBlockSize / 2, 0, gridBlockSize / 2))
+        let tower2 = new TowerDefense.TowerBlock(btowerPos, towerBlockColor);
+        let tower3 = new TowerDefense.ITower(towerSelectionPositions[2], iTowerColor);
+        let tower4 = new TowerDefense.ITowerVariant(towerSelectionPositions[3], iTowerColor);
         TowerDefense.towers.appendChild(tower1);
         TowerDefense.towers.appendChild(tower2);
         TowerDefense.towers.appendChild(tower3);
         TowerDefense.towers.appendChild(tower4);
     }
-    function convertClientToView(_mousepos) {
+    function convertClientToRay(_mousepos) {
         let posProjection = TowerDefense.viewport.pointClientToProjection(_mousepos);
         let ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
         let camera = TowerDefense.viewport.camera;
-        ray.direction.scale(cameraDistance - 1);
+        ray.direction.scale(TowerDefense.cameraDistance - 1);
         ray.origin.transform(camera.pivot);
         ray.origin.transform(TowerDefense.viewport.getGraph().mtxWorld);
         ray.direction.transform(camera.pivot, false);
@@ -626,6 +714,26 @@ var TowerDefense;
         let rayEnd = ƒ.Vector3.SUM(ray.origin, ray.direction);
         return rayEnd;
     }
+    function spawnNewTower(_pos) {
+        let randomIndex = ƒ.Random.default.getRangeFloored(0, 3);
+        let tower;
+        switch (randomIndex) {
+            case 0:
+                tower = new TowerDefense.Tower(_pos);
+                break;
+            case 1:
+                tower = new TowerDefense.TowerBlock(_pos, towerBlockColor);
+                break;
+            case 2:
+                tower = new TowerDefense.ITower(_pos, iTowerColor);
+                break;
+            case 3:
+                tower = new TowerDefense.ITowerVariant(_pos, iTowerColor);
+                break;
+        }
+        TowerDefense.towers.appendChild(tower);
+    }
+    TowerDefense.spawnNewTower = spawnNewTower;
 })(TowerDefense || (TowerDefense = {}));
 var TowerDefense;
 (function (TowerDefense) {
@@ -676,10 +784,21 @@ var TowerDefense;
                     closestGridPos = gridArray[i];
                 }
             }
-            let adjustgridpos = closestGridPos.copy;
-            adjustgridpos.subtract(new ƒ.Vector3(2, 0, 2));
-            this.cmpTransform.local.translation = adjustgridpos;
-            this.towerActive = true;
+            let actualPosition = closestGridPos.copy;
+            let scaling = this.getTowerBase().getComponent(ƒ.ComponentMesh).pivot.scaling.copy;
+            actualPosition.subtract(new ƒ.Vector3(2, 0, 2));
+            if (ƒ.Vector3.DIFFERENCE(adjustedPos, closestGridPos).magnitudeSquared < TowerDefense.gridBlockSize ** 2 && !this.checkCollisionWithOtherTowers(actualPosition, scaling)) {
+                let adjustgridpos = closestGridPos.copy;
+                adjustgridpos.subtract(new ƒ.Vector3(2, 0, 2));
+                this.cmpTransform.local.translation = adjustgridpos;
+                this.towerActive = true;
+                TowerDefense.spawnNewTower(this.originalposition);
+            }
+            else {
+                let adjustgridpos = this.originalposition.copy;
+                adjustgridpos.add(new ƒ.Vector3(2, 0, 2));
+                this.cmpTransform.local.translation = adjustgridpos;
+            }
         }
         init() {
             this.createNodes();
@@ -707,9 +826,9 @@ var TowerDefense;
             cannonBarrelMeshCmp.pivot.scale(new ƒ.Vector3(1, 1, 4));
             cannon.appendChild(cannonBarrel);
             let towerTransformation = new ƒ.ComponentTransform();
-            let pos = this.position.copy;
-            pos.add(new ƒ.Vector3(2, 0, 2));
-            towerTransformation.local.translate(pos);
+            //let pos = this.originalposition.copy;
+            //pos.add(new ƒ.Vector3(2, 0, 2));
+            towerTransformation.local.translate(this.originalposition);
             this.addComponent(towerTransformation);
         }
     }

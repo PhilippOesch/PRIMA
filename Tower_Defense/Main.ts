@@ -14,15 +14,16 @@ namespace TowerDefense {
 
     let gridX: number = 15;
     let gridZ: number = 10;
-    let cameraDistance = gridBlockSize * gridX * 1.5;
+
+    export let cameraDistance: number = gridBlockSize * gridX * 1.5;
 
     let objectIsPicked: boolean = false;
     let selectedTower: Tower;
 
-    let TowerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
-    let ITowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
+    let towerBlockColor: ƒ.Color = new ƒ.Color(0.3, 0.3, 0.3);
+    let iTowerColor: ƒ.Color = new ƒ.Color(0.4, 0.4, 0.4);
 
-    let towerSelectionPositions: ƒ.Vector3[]= new Array<ƒ.Vector3>();
+    let towerSelectionPositions: ƒ.Vector3[] = new Array<ƒ.Vector3>();
 
     function hndLoad(_event: Event): void {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
@@ -45,7 +46,7 @@ namespace TowerDefense {
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
         cmpCamera.pivot.translate(new ƒ.Vector3(8, cameraDistance, 0.000001));
-        let cameraLookAt: ƒ.Vector3= new ƒ.Vector3(8, 0, 0)
+        let cameraLookAt: ƒ.Vector3 = new ƒ.Vector3(8, 0, 0);
         cmpCamera.pivot.lookAt(cameraLookAt);
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
 
@@ -107,7 +108,7 @@ namespace TowerDefense {
         let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         if (objectIsPicked) {
 
-            let rayEnd: ƒ.Vector3 = convertClientToView(posMouse);
+            let rayEnd: ƒ.Vector3 = convertClientToRay(posMouse);
             console.log(rayEnd);
             let cmpTransform: ƒ.ComponentTransform = selectedTower.getComponent(ƒ.ComponentTransform);
             cmpTransform.local.translation = rayEnd;
@@ -141,9 +142,9 @@ namespace TowerDefense {
 
     function pointerUp(_event: ƒ.EventPointer): void {
         let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
-        let rayEnd: ƒ.Vector3 = convertClientToView(posMouse);
- 
-        if(objectIsPicked){
+        let rayEnd: ƒ.Vector3 = convertClientToRay(posMouse);
+
+        if (objectIsPicked) {
             selectedTower.resetMaterialColor();
             selectedTower.snapToGrid(rayEnd);
             selectedTower.resetMaterialColor();
@@ -153,8 +154,8 @@ namespace TowerDefense {
     }
 
     function createTowers(): void {
-        for(let i= 0; i<4; i++){
-            towerSelectionPositions.push(new ƒ.Vector3(((gridX*gridBlockSize)/2+ gridBlockSize*3), 1, (gridZ* gridBlockSize/2)-(i*10)));
+        for (let i = 0; i < 4; i++) {
+            towerSelectionPositions.push(new ƒ.Vector3(((gridX * gridBlockSize) / 2 + gridBlockSize * 3), 1, (gridZ * gridBlockSize / 2) - (i * 10)));
         }
 
         // let tower1: Tower = new Tower(grid[5][1]);
@@ -163,18 +164,18 @@ namespace TowerDefense {
         // let tower4: ITowerVariant = new ITowerVariant(grid[1][5], ITowerColor);
 
         let tower1: Tower = new Tower(towerSelectionPositions[0]);
-        let btowerPos: ƒ.Vector3= towerSelectionPositions[1].copy;
-        btowerPos.subtract(new ƒ.Vector3(gridBlockSize/2, 0, gridBlockSize/2))
-        let tower2: TowerBlock = new TowerBlock(btowerPos, TowerBlockColor);
-        let tower3: ITower = new ITower(towerSelectionPositions[2], ITowerColor);
-        let tower4: ITowerVariant = new ITowerVariant(towerSelectionPositions[3], ITowerColor);
+        let btowerPos: ƒ.Vector3 = towerSelectionPositions[1].copy;
+        //btowerPos.subtract(new ƒ.Vector3(gridBlockSize / 2, 0, gridBlockSize / 2))
+        let tower2: TowerBlock = new TowerBlock(btowerPos, towerBlockColor);
+        let tower3: ITower = new ITower(towerSelectionPositions[2], iTowerColor);
+        let tower4: ITowerVariant = new ITowerVariant(towerSelectionPositions[3], iTowerColor);
         towers.appendChild(tower1);
         towers.appendChild(tower2);
         towers.appendChild(tower3);
         towers.appendChild(tower4);
     }
 
-    function convertClientToView(_mousepos: ƒ.Vector2): ƒ.Vector3 {
+    function convertClientToRay(_mousepos: ƒ.Vector2): ƒ.Vector3 {
         let posProjection: ƒ.Vector2 = viewport.pointClientToProjection(_mousepos);
         let ray: ƒ.Ray = new ƒ.Ray(new ƒ.Vector3(-posProjection.x, posProjection.y, 1));
         let camera: ƒ.ComponentCamera = viewport.camera;
@@ -187,5 +188,27 @@ namespace TowerDefense {
 
         let rayEnd: ƒ.Vector3 = ƒ.Vector3.SUM(ray.origin, ray.direction);
         return rayEnd;
+    }
+
+    export function spawnNewTower(_pos: ƒ.Vector3): void {
+        let randomIndex: number = ƒ.Random.default.getRangeFloored(0, 3);
+        let tower: Tower;
+
+        switch (randomIndex) {
+            case 0:
+                tower = new Tower(_pos);
+                break;
+            case 1:
+                tower = new TowerBlock(_pos, towerBlockColor);
+                break;
+            case 2:
+                tower = new ITower(_pos, iTowerColor);
+                break;
+            case 3:
+                tower = new ITowerVariant(_pos, iTowerColor);
+                break;
+        }
+
+        towers.appendChild(tower);
     }
 }
