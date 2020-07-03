@@ -49,17 +49,7 @@ namespace Real_Time_Strategie {
 
                     this.moveTo = null;
                 }
-                
-                //testing
-                // let pointAt: ƒ.Vector3 = this.moveTo.copy;
-                // pointAt.subtract(this.mtxWorld.translation);
-                // let testMatrix: ƒ.Matrix4x4 = this.base.mtxLocal.copy;
-                // testMatrix.lookAt(pointAt, ƒ.Vector3.Z());
-                // testMatrix.rotate(new ƒ.Vector3(0, 90, 90));
-                // let newCmpTransform: ƒ.ComponentTransform = new ƒ.ComponentTransform(testMatrix);
-                // let oldCmpTransform: ƒ.ComponentTransform = this.base.getComponent(ƒ.ComponentTransform);
-                // this.base.removeComponent(oldCmpTransform);
-                // this.base.addComponent(newCmpTransform);
+            
                 
                 let pointAt: ƒ.Vector3 = this.moveTo.copy;
                 pointAt.subtract(this.mtxWorld.translation);
