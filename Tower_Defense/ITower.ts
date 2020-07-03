@@ -77,6 +77,7 @@ namespace TowerDefense {
         }
 
         protected init(): void {
+<<<<<<< HEAD
             this.range = 12;
             this.cannon1RelPos = ƒ.Vector3.X(-4);
             this.cannon2RelPos = ƒ.Vector3.X(4);
@@ -84,6 +85,17 @@ namespace TowerDefense {
             this.zScale = 4;
             this.createNodes();
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+=======
+            this.range= 12;
+            this.cannon1RelPos= ƒ.Vector3.X(-4);
+            this.cannon2RelPos= ƒ.Vector3.X(4);
+            this.xScale= 12;
+            this.zScale= 4;
+            this.createNodes();
+            ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+            // ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.fireProjectile);
+            // ƒ.Loop.start(ƒ.LOOP_MODE.TIME_REAL, 1);
+>>>>>>> dev
             this.addComponent(new ComponentPicker(1));
         }
 
@@ -136,7 +148,7 @@ namespace TowerDefense {
             cannon2BarrelMeshCmp.pivot.scale(new ƒ.Vector3(0.5, 0.5, 2));
             cannon2.appendChild(cannon2Barrel);
 
-            let towerTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.position));
+            let towerTransformation: ƒ.ComponentTransform = new ƒ.ComponentTransform(ƒ.Matrix4x4.TRANSLATION(this.originalposition));
             this.addComponent(towerTransformation);
         }
 
