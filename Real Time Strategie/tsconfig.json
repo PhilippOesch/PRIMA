@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "outFile": "RealTimeStrategie.js",
+    "types": [
+      "../FudgeCore/FudgeCore",
+      "../FudgeAid/FudgeAid",
+    ]
+  }
+}
