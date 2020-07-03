@@ -14,12 +14,9 @@ namespace TowerDefense {
 
     let gridX: number = 15;
     let gridZ: number = 10;
-<<<<<<< HEAD
-    let cameraDistance: number = gridBlockSize * gridX * 1.3;
-=======
+
 
     export let cameraDistance: number = gridBlockSize * gridX * 1.5;
->>>>>>> dev
 
     let objectIsPicked: boolean = false;
     let selectedTower: Tower;
@@ -129,13 +126,8 @@ namespace TowerDefense {
         for (let tower of towerset) {
             let cmpPicker: ComponentPicker = tower.getComponent(ComponentPicker);
             let pickData: PickData = cmpPicker.pick(posMouse);
-<<<<<<< HEAD
-            let castedTower: Tower = <Tower>tower;
-            if (pickData) {
-=======
             let castedTower = <Tower>tower;
             if (pickData && !castedTower.towerActive) {
->>>>>>> dev
                 objectIsPicked = true;
                 selectedTower = castedTower;
                 castedTower.setMaterialColor(ƒ.Color.CSS("red"));
@@ -163,12 +155,7 @@ namespace TowerDefense {
     }
 
     function createTowers(): void {
-<<<<<<< HEAD
-        let tower1: Tower = new Tower(grid[5][1]);
-        let tower2: TowerBlock = new TowerBlock(grid[6][2], towerBlockColor);
-        let tower3: ITower = new ITower(grid[5][5], iTowerColor);
-        let tower4: ITowerVariant = new ITowerVariant(grid[1][5], iTowerColor);
-=======
+
         for (let i = 0; i < 4; i++) {
             towerSelectionPositions.push(new ƒ.Vector3(((gridX * gridBlockSize) / 2 + gridBlockSize * 3), 1, (gridZ * gridBlockSize / 2) - (i * 10)));
         }
@@ -184,7 +171,7 @@ namespace TowerDefense {
         let tower2: TowerBlock = new TowerBlock(btowerPos, towerBlockColor);
         let tower3: ITower = new ITower(towerSelectionPositions[2], iTowerColor);
         let tower4: ITowerVariant = new ITowerVariant(towerSelectionPositions[3], iTowerColor);
->>>>>>> dev
+
         towers.appendChild(tower1);
         towers.appendChild(tower2);
         towers.appendChild(tower3);
