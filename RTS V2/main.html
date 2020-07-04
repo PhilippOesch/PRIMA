@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../FudgeCore/FudgeCore.js"></script>
+    <script src="../FudgeAid/FudgeAid.js"></script>
+    <script src="RealTimeStrategie.js"></script>
+    <title>Real Time Strategie Game</title>
+    <style>
+         body,
+        html {
+            height: 100%;
+            margin: 0px;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        canvas {
+            flex-grow: 1;
+        }
+
+        img{
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <img id="tankbullet" src="assets/bulletBlueSilver_outline.png" crossorigin="anonymous">
+    <img id="terrain" src="assets/grass.png" crossorigin="anonymous">
+    <img id="tank" src="assets/tankBlue_outline.png" crossorigin="anonymous">
+    <img id="cannon" src="assets/barrelGrey_up.png" crossorigin="anonymous">
+    <img id="barrel" src="assets/barrelBlue_outline.png" crossorigin="anonymous">
+    <img id="selected" src="assets/selected.png" crossorigin="anonymous">
+    <img id="enemytank" src="assets/tankRed_outline.png" crossorigin="anonymous">
+    <img id="enemybarrel" src="assets/barrelRed_outline.png" crossorigin="anonymous">
+    <canvas></canvas>
+</body>
+</html>
