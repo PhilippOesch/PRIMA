@@ -10,6 +10,9 @@ namespace RTS_V2 {
     let selectedUnits: Unit[] = new Array<Unit>();
     let startSelectionInfo: { startSelectionPos: ƒ.Vector3, startSelectionClientPos: ƒ.Vector2 };
 
+    let mousePos: ƒ.Vector2;
+    //let mousePos= ƒ.Vector2;
+
     ƒ.RenderManager.initialize(true, false);
 
     window.addEventListener("load", hndLoad);
@@ -18,7 +21,7 @@ namespace RTS_V2 {
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
         let backgroundImg: HTMLImageElement = document.querySelector("#terrain");
         Bullet.loadImages();
-        Unit.loadImages();
+        TankUnit.loadImages();
 
         let graph: ƒ.Node = new ƒ.Node("Game");
         let terrain: ƒAid.Node = createTerrainNode(backgroundImg);
@@ -58,6 +61,9 @@ namespace RTS_V2 {
 
     function update(): void {
         viewport.draw();
+        if (startSelectionInfo != null) {
+            drawSelectionRectangle(startSelectionInfo.startSelectionClientPos, mousePos);
+        }
     }
 
     function createTerrainNode(_img: HTMLImageElement): ƒAid.Node {
@@ -72,6 +78,8 @@ namespace RTS_V2 {
         let terrain: ƒAid.Node = new ƒAid.Node("Terrain", ƒ.Matrix4x4.IDENTITY(), mtr, mesh);
         let terrainsCmpMesh: ƒ.ComponentMesh = terrain.getComponent(ƒ.ComponentMesh);
         terrainsCmpMesh.pivot.scale(new ƒ.Vector3(20, 20, 0));
+        let cmpMesh: ƒ.ComponentMaterial = terrain.getComponent(ƒ.ComponentMaterial);
+        cmpMesh.pivot.scale(new ƒ.Vector2(5, 5));
 
         return terrain;
     }
@@ -89,11 +97,11 @@ namespace RTS_V2 {
     }
 
     function createUnits(): void {
-        let unit0: Unit = new Unit("Unit", new ƒ.Vector3(0, 2, 0.1), false);
-        let unit1: Unit = new Unit("Unit", new ƒ.Vector3(2, 4, 0.1), false);
-        let unit2: Unit = new Unit("Unit", new ƒ.Vector3(0, 0, 0.1));
-        let unit3: Unit = new Unit("Unit", new ƒ.Vector3(2, 0, 0.1));
-        let unit4: Unit = new Unit("Unit", new ƒ.Vector3(2, 2, 0.1));
+        let unit0: Unit = new TankUnit("Unit", new ƒ.Vector3(0, 2, 0.1), false);
+        let unit1: Unit = new TankUnit("Unit", new ƒ.Vector3(2, 4, 0.1), false);
+        let unit2: Unit = new TankUnit("Unit", new ƒ.Vector3(0, 0, 0.1));
+        let unit3: Unit = new TankUnit("Unit", new ƒ.Vector3(2, 0, 0.1));
+        let unit4: Unit = new TankUnit("Unit", new ƒ.Vector3(2, 2, 0.1));
         enemyUnits.appendChild(unit0);
         enemyUnits.appendChild(unit1);
         units.appendChild(unit2);
@@ -107,14 +115,32 @@ namespace RTS_V2 {
         let position: ƒ.Vector3 = ray.intersectPlane(new ƒ.Vector3(0, 0, 0.1), ƒ.Vector3.Z(1));
 
         if (_event.which == 1) { //Left Mouse Click
+            mousePos= posMouse;
             startSelectionInfo = { startSelectionPos: position, startSelectionClientPos: posMouse };
-        } else if (_event.which == 3) {
-            if (selectedUnits.length != 0) {
-                let targetPosArray: ƒ.Vector3[] = createTargetPosArray(position, 1.5, 5);
+        } else if (_event.which == 3 && selectedUnits.length != 0) {
 
-                let index: number = 0;
+            let targetPosArray: ƒ.Vector3[] = createTargetPosArray(position, 1.5, 5);
+
+            let index: number = 0;
+            let enemySelected: Unit= null;
+
+            let enemies: Array<Unit> = enemyUnits.getChildren().map((value) => {
+                return <Unit>value;
+            });
+
+            for (let enemy of enemies) {
+                if (enemy.isInPickingRange(ray)) {
+                    enemySelected = enemy;
+                }
+            }
+            if (enemySelected != null) {
                 for (let unit of selectedUnits) {
-                    unit.movePos = targetPosArray[index];
+                    unit.setTarget = enemySelected;
+                }
+            } else {
+                for (let unit of selectedUnits) {
+                    unit.setTarget = null;
+                    unit.setMove = targetPosArray[index];
                     index = (index + 1) % targetPosArray.length;
                 }
             }
@@ -139,7 +165,7 @@ namespace RTS_V2 {
             let distanceVector: ƒ.Vector3 = ƒ.Vector3.DIFFERENCE(startSelectionInfo.startSelectionPos, endPos);
             if (distanceVector.magnitudeSquared < 1) {
                 for (let unit of allunits) {
-                    if(unit.isInPickingRange(ray)){
+                    if (unit.isInPickingRange(ray)) {
                         unit.setPicked(true);
                         selectedUnits.push(unit);
                     } else {
@@ -171,10 +197,7 @@ namespace RTS_V2 {
 
     function pointerMove(_event: ƒ.EventPointer): void {
         let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
-
-        if (startSelectionInfo != null) {
-            drawSelectionRectangle(startSelectionInfo.startSelectionClientPos, posMouse);
-        }
+        mousePos= posMouse;
     }
 
     function createTargetPosArray(_pos: ƒ.Vector3, _distance: number, _positionCount: number): ƒ.Vector3[] {
