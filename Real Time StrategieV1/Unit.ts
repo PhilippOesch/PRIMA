@@ -1,19 +1,18 @@
-namespace Real_Time_Strategie {
+namespace Real_Time_Strategie_V2 {
     import ƒ = FudgeCore;
     import ƒAid = FudgeAid;
 
     export class Unit extends ƒ.Node {
         public static mesh: ƒ.MeshSprite = new ƒ.MeshSprite();
-        public static material: ƒ.Material = new ƒ.Material("UnitMaterial", ƒ.ShaderUniColor, new ƒ.CoatColored(new ƒ.Color(0.7, 0.7, 0.7)));
-        public static cannonMaterial: ƒ.Material = new ƒ.Material("UnitMaterial", ƒ.ShaderUniColor, new ƒ.CoatColored(new ƒ.Color(0.3, 0.3, 0.3)));
-        public static cannonBarrelMaterial: ƒ.Material = new ƒ.Material("UnitMaterial", ƒ.ShaderUniColor, new ƒ.CoatColored(new ƒ.Color(0.4, 0.4, 0.4)));
         public static pickedColor: ƒ.Color = new ƒ.Color(1, 0, 0);
+        public static bodymaterial: ƒ.Material;
+        public static cannonMaterial: ƒ.Material;
+        public static cannonBarrelMaterial: ƒ.Material;
 
         public pickingRange: number = 1;
-        public speed: number = 2 / 1000;
-        public moveTo: ƒ.Vector3;
-        private base: ƒ.Node;
-        //private speed: number;
+        private moveTo: ƒ.Vector3;
+        private speed: number = 3 / 1000;
+        private bodyNode: ƒ.Node;
 
         constructor(_name: string, _pos: ƒ.Vector3) {
             super(_name);
@@ -21,18 +20,40 @@ namespace Real_Time_Strategie {
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
         }
 
+        public static loadMaterials(): void {
+            let bodyImg: HTMLImageElement = document.querySelector(".tankbody");
+            let barrelImg: HTMLImageElement = document.querySelector(".tankbarrel");
+            let cannonlImg: HTMLImageElement = document.querySelector(".tankcannon");
+
+            Unit.bodymaterial = Unit.loadMaterialWithTexture("bodyMtr", bodyImg);
+            Unit.cannonMaterial = Unit.loadMaterialWithTexture("cannonMtr", cannonlImg);
+            Unit.cannonBarrelMaterial = Unit.loadMaterialWithTexture("cannonBarrelMtr", barrelImg);
+        }
+
+        public static loadMaterialWithTexture(_name: String, _img: HTMLImageElement): ƒ.Material {
+            let txt: ƒ.TextureImage = new ƒ.TextureImage();
+            console.log(_img);
+            txt.image = _img;
+            console.log(txt.type);
+            let coatTxt: ƒ.CoatTextured = new ƒ.CoatTextured();
+            coatTxt.texture = txt;
+            let mtr: ƒ.Material = new ƒ.Material(name, ƒ.ShaderTexture, coatTxt);
+            return mtr;
+
+        }
+
         public set move(_pos: ƒ.Vector3) {
             this.moveTo = _pos;
         }
 
         public setPicked(_bool: boolean): void {
-            let cmpMaterial: ƒ.ComponentMaterial = this.base.getComponent(ƒ.ComponentMaterial);
+            //let cmpMaterial: ƒ.ComponentMaterial = this.bodyNode.getComponent(ƒ.ComponentMaterial);
             if (_bool) {
-                cmpMaterial.clrPrimary = Unit.pickedColor;
+               //cmpMaterial.clrPrimary = Unit.pickedColor;
             } else {
-                let newCmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(Unit.material)
-                this.base.removeComponent(cmpMaterial);
-                this.base.addComponent(newCmpMaterial);
+                // let newCmpMaterial: ƒ.ComponentMaterial = new ƒ.ComponentMaterial(this.bodymaterial)
+                // this.bodyNode.removeComponent(cmpMaterial);
+                // this.bodyNode.addComponent(newCmpMaterial);
             }
         }
 
@@ -43,18 +64,16 @@ namespace Real_Time_Strategie {
             if (this.moveTo != null) {
                 while (true) {
                     move = ƒ.Vector3.DIFFERENCE(this.moveTo, this.mtxLocal.translation);
-                    console.log(move);
                     if (move.magnitudeSquared > distanceToTravel * distanceToTravel)
                         break;
 
                     this.moveTo = null;
                 }
-            
-                
+
                 let pointAt: ƒ.Vector3 = this.moveTo.copy;
                 pointAt.subtract(this.mtxWorld.translation);
-                this.base.mtxLocal.lookAt(pointAt, ƒ.Vector3.Z());
-                this.base.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+                this.bodyNode.mtxLocal.lookAt(pointAt, ƒ.Vector3.Z());
+                this.bodyNode.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
                 this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(move, distanceToTravel));
             }
         }
@@ -69,12 +88,13 @@ namespace Real_Time_Strategie {
         }
 
         private createNodes(_pos: ƒ.Vector3): void {
-            this.base = new ƒAid.Node("Unit Base", ƒ.Matrix4x4.IDENTITY(), Unit.material, Unit.mesh);
-            let baseCmpMesh: ƒ.ComponentMesh = this.base.getComponent(ƒ.ComponentMesh);
-            baseCmpMesh.pivot.scale(new ƒ.Vector3(1.5, 1, 0));
-            this.appendChild(this.base);
 
-            let cannon: ƒAid.Node = new ƒAid.Node("Unit Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(0.10001)), Unit.cannonMaterial, Unit.mesh);
+            this.bodyNode = new ƒAid.Node("Unit Base", ƒ.Matrix4x4.IDENTITY(), Unit.bodymaterial, Unit.mesh);
+            let baseCmpMesh: ƒ.ComponentMesh = this.bodyNode.getComponent(ƒ.ComponentMesh);
+            baseCmpMesh.pivot.scale(new ƒ.Vector3(1, 1, 0));
+            this.appendChild(this.bodyNode);
+
+            let cannon: ƒAid.Node = new ƒAid.Node("Unit Cannon", ƒ.Matrix4x4.TRANSLATION(ƒ.Vector3.Z(0.2)), Unit.cannonMaterial, Unit.mesh);
             let cannonCmpMesh: ƒ.ComponentMesh = cannon.getComponent(ƒ.ComponentMesh);
             cannonCmpMesh.pivot.scale(new ƒ.Vector3(0.7, 0.7, 0));
 
