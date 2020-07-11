@@ -1,15 +1,22 @@
-namespace RTS_V2{
+namespace RTS_V2 {
     import ƒ = FudgeCore;
 
     export abstract class Unit extends ƒ.Node {
         public collisionRange: number;
+        public isPlayer: boolean;
+
         protected shootingRange: number;
         protected shootingRate: number;
-        protected isPlayer: boolean;
         protected target: Unit;
         protected shootingTimer: ƒ.Timer;
         protected moveTo: ƒ.Vector3;
         protected speed: number = 3 / 1000;
+        protected health: number = 1;
+        protected armor: number = 2;
+        protected flock: Flock;
+        protected isDead: boolean = false;
+
+        protected healthBar: Healthbar;
 
         public set setMove(_pos: ƒ.Vector3) {
             this.moveTo = _pos;
@@ -17,6 +24,10 @@ namespace RTS_V2{
 
         public set setTarget(_target: Unit) {
             this.target = _target;
+        }
+
+        public get getHealth(): number {
+            return this.health;
         }
 
         public attack(): void {
@@ -34,7 +45,7 @@ namespace RTS_V2{
                 this.clearTimer();
             }
 
-            if (this.target == undefined) {
+            if (this.target == undefined || this.target.isDead) {
                 this.target = null;
                 this.clearTimer();
             }
@@ -49,27 +60,41 @@ namespace RTS_V2{
             }
         }
 
-        public setPicked(_bool: boolean): void {
-           console.log("isPicked");
-        }
-        
-        protected move(): void {
-            let distanceToTravel: number = this.speed * ƒ.Loop.timeFrameGame;
-            let move: ƒ.Vector3;
-
-            if (this.moveTo != null) {
-                while (true) {
-                    move = ƒ.Vector3.DIFFERENCE(this.moveTo, this.mtxLocal.translation);
-                    if (move.magnitudeSquared > distanceToTravel * distanceToTravel)
-                        break;
-
-                    this.moveTo = null;
-                }
-
-                let pointAt: ƒ.Vector3 = this.moveTo.copy;
-                pointAt.subtract(this.mtxWorld.translation);
-                this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(move, distanceToTravel));
+        public calculateDamage(_bullet: Bullet): void {
+            this.health -= (_bullet.damage / this.armor);
+            //(<Healthbar>this.healthBar).health = Math.floor(this.health * 100);
+            if (this.health <= 0 && !this.isDead) {
+                units.removeChild(this);
+                this.isDead = true;
+                this.healthBar.delete();
+                this.healthBar = null;
             }
+        }
+
+
+        public setPicked(_bool: boolean): void {
+            console.log("isPicked");
+        }
+
+        protected move(_move: ƒ.Vector3): void {
+            let distanceToTravel: number = this.speed * ƒ.Loop.timeFrameGame;
+            let moveVector: ƒ.Vector3;
+
+            moveVector = ƒ.Vector3.DIFFERENCE(_move, this.mtxLocal.translation);
+
+            while (true) {
+                moveVector = ƒ.Vector3.DIFFERENCE(this.moveTo, this.mtxLocal.translation);
+                if (moveVector.magnitudeSquared > distanceToTravel ** 2)
+                    break;
+
+                this.moveTo = null;
+            }
+
+            moveVector = this.flock.calculateMove(moveVector);
+            let pointAt: ƒ.Vector3 = moveVector.copy;
+            pointAt.subtract(this.mtxWorld.translation);
+            this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(moveVector, distanceToTravel));
+
         }
 
         protected getTextureMaterial(_img: HTMLImageElement): ƒ.Material {
@@ -88,7 +113,7 @@ namespace RTS_V2{
         }
 
         protected clearTimer(): void {
-            if(this.shootingTimer!= undefined){
+            if (this.shootingTimer != undefined) {
                 this.shootingTimer.clear();
             }
         }
@@ -98,8 +123,9 @@ namespace RTS_V2{
                 let targetpos: ƒ.Vector3 = this.target.mtxWorld.translation.copy;
                 //targetpos.subtract(this.mtxWorld.translation.copy);
                 console.log(targetpos);
-                
+
             }
         }
+
     }
 }

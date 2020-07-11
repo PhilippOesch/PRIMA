@@ -5,6 +5,8 @@ namespace RTS_V2 {
     export class Bullet extends ƒ.Node {
         public static bulletImg: HTMLImageElement;
 
+        public damage: number = 0.5;
+
         private target: Unit;
         private speed: number;
         private collisionActive: boolean = true;
@@ -16,6 +18,7 @@ namespace RTS_V2 {
             this.speed = _speed;
             this.createNodes(_pos);
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+            Audio.play(AUDIO.SHOOT);
         }
 
         public static loadImages(): void {
@@ -62,8 +65,10 @@ namespace RTS_V2 {
                 let targetPos: ƒ.Vector3 = this.target.mtxWorld.translation.copy;
                 let distanceVector: ƒ.Vector3 = ƒ.Vector3.DIFFERENCE(thisPos, targetPos);
                 if (distanceVector.magnitudeSquared < this.target.collisionRange) {
+                    this.target.calculateDamage(this);
                     this.collisionActive = false;
                     bullets.removeChild(this);
+                    Audio.play(AUDIO.IMPACT);
                 }
             }
         }
@@ -75,5 +80,6 @@ namespace RTS_V2 {
             coatTxt.texture = txt;
             return new ƒ.Material(_name, ƒ.ShaderTexture, coatTxt);
         }
+
     }
 }

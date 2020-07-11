@@ -1,14 +1,19 @@
+
 namespace RTS_V2 {
     import ƒ = FudgeCore;
     import ƒAid = FudgeAid;
+    //import ƒUi = FudgeUserInterface;
 
     export let viewport: ƒ.Viewport;
     export let units: ƒ.Node;
-    export let enemyUnits: ƒ.Node;
     export let bullets: ƒ.Node;
 
     let selectedUnits: Unit[] = new Array<Unit>();
     let startSelectionInfo: { startSelectionPos: ƒ.Vector3, startSelectionClientPos: ƒ.Vector2 };
+
+    let terrainX: number = 30;
+    let terrainY: number = 20;
+    let terrainTiling: number = 5;
 
     let mousePos: ƒ.Vector2;
     //let mousePos= ƒ.Vector2;
@@ -18,8 +23,15 @@ namespace RTS_V2 {
     window.addEventListener("load", hndLoad);
 
     function hndLoad(_event: Event): void {
+        // ƒUi.CustomElementTemplate.register("custom-healthbar");
+        // ƒUi.CustomElement.register("custom-healthbar", FudgeUserInterface.CustomElementTemplate);
+
         const canvas: HTMLCanvasElement = document.querySelector("canvas");
         let backgroundImg: HTMLImageElement = document.querySelector("#terrain");
+
+        //prevents the context menu to open
+        canvas.addEventListener("contextmenu", event => event.preventDefault());
+
         Bullet.loadImages();
         TankUnit.loadImages();
 
@@ -28,19 +40,22 @@ namespace RTS_V2 {
         graph.appendChild(terrain);
         bullets = new ƒ.Node("Bullets");
         units = new ƒ.Node("Units");
-        enemyUnits = new ƒ.Node("EnemyUnits");
         graph.appendChild(bullets);
         graph.appendChild(units);
-        graph.appendChild(enemyUnits);
+
 
         let cmpCamera: ƒ.ComponentCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(ƒ.Vector3.Z(30));
+        cmpCamera.pivot.translate(ƒ.Vector3.Z(35));
         let cameraLookAt: ƒ.Vector3 = new ƒ.Vector3(0, 0, 0);
         cmpCamera.pivot.lookAt(cameraLookAt);
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
 
         viewport = new ƒ.Viewport();
         viewport.initialize("Viewport", graph, cmpCamera, canvas);
+
+        //setup AudioNode
+        Audio.start();
+        
         createUnits();
 
         viewport.addEventListener(ƒ.EVENT_POINTER.DOWN, pointerDown);
@@ -77,9 +92,9 @@ namespace RTS_V2 {
 
         let terrain: ƒAid.Node = new ƒAid.Node("Terrain", ƒ.Matrix4x4.IDENTITY(), mtr, mesh);
         let terrainsCmpMesh: ƒ.ComponentMesh = terrain.getComponent(ƒ.ComponentMesh);
-        terrainsCmpMesh.pivot.scale(new ƒ.Vector3(20, 20, 0));
-        let cmpMesh: ƒ.ComponentMaterial = terrain.getComponent(ƒ.ComponentMaterial);
-        cmpMesh.pivot.scale(new ƒ.Vector2(5, 5));
+        terrainsCmpMesh.pivot.scale(new ƒ.Vector3(terrainX, terrainY, 0));
+        let cmpMtr: ƒ.ComponentMaterial = terrain.getComponent(ƒ.ComponentMaterial);
+        cmpMtr.pivot.scale(new ƒ.Vector2(terrainX / terrainTiling, terrainY / terrainTiling));
 
         return terrain;
     }
@@ -102,8 +117,8 @@ namespace RTS_V2 {
         let unit2: Unit = new TankUnit("Unit", new ƒ.Vector3(0, 0, 0.1));
         let unit3: Unit = new TankUnit("Unit", new ƒ.Vector3(2, 0, 0.1));
         let unit4: Unit = new TankUnit("Unit", new ƒ.Vector3(2, 2, 0.1));
-        enemyUnits.appendChild(unit0);
-        enemyUnits.appendChild(unit1);
+        units.appendChild(unit0);
+        units.appendChild(unit1);
         units.appendChild(unit2);
         units.appendChild(unit3);
         units.appendChild(unit4);
@@ -115,18 +130,15 @@ namespace RTS_V2 {
         let position: ƒ.Vector3 = ray.intersectPlane(new ƒ.Vector3(0, 0, 0.1), ƒ.Vector3.Z(1));
 
         if (_event.which == 1) { //Left Mouse Click
-            mousePos= posMouse;
+            mousePos = posMouse;
             startSelectionInfo = { startSelectionPos: position, startSelectionClientPos: posMouse };
         } else if (_event.which == 3 && selectedUnits.length != 0) {
 
-            let targetPosArray: ƒ.Vector3[] = createTargetPosArray(position, 1.5, 5);
+            let targetPosArray: ƒ.Vector3[] = Utils.createTargetPosArray(position, 1.5, selectedUnits.length);
 
-            let index: number = 0;
-            let enemySelected: Unit= null;
+            let enemySelected: Unit = null;
 
-            let enemies: Array<Unit> = enemyUnits.getChildren().map((value) => {
-                return <Unit>value;
-            });
+            let enemies: Array<Unit> = getUnits(false);
 
             for (let enemy of enemies) {
                 if (enemy.isInPickingRange(ray)) {
@@ -138,10 +150,13 @@ namespace RTS_V2 {
                     unit.setTarget = enemySelected;
                 }
             } else {
+                let index: number = 0;
+
                 for (let unit of selectedUnits) {
                     unit.setTarget = null;
                     unit.setMove = targetPosArray[index];
-                    index = (index + 1) % targetPosArray.length;
+                    index++;
+                    console.log(targetPosArray);
                 }
             }
         } else {
@@ -151,6 +166,7 @@ namespace RTS_V2 {
     }
 
     function pointerUp(_event: ƒ.EventPointer): void {
+        _event.preventDefault();
         let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         let ray: ƒ.Ray = viewport.getRayFromClient(posMouse);
 
@@ -158,9 +174,7 @@ namespace RTS_V2 {
             selectedUnits = new Array<Unit>();
             let endPos: ƒ.Vector3 = ray.intersectPlane(new ƒ.Vector3(0, 0, 0.1), ƒ.Vector3.Z(1));
 
-            let allunits: Array<Unit> = units.getChildren().map((value) => {
-                return <Unit>value;
-            });
+            let allunits: Array<Unit> = getUnits();
 
             let distanceVector: ƒ.Vector3 = ƒ.Vector3.DIFFERENCE(startSelectionInfo.startSelectionPos, endPos);
             if (distanceVector.magnitudeSquared < 1) {
@@ -197,21 +211,30 @@ namespace RTS_V2 {
 
     function pointerMove(_event: ƒ.EventPointer): void {
         let posMouse: ƒ.Vector2 = new ƒ.Vector2(_event.canvasX, _event.canvasY);
-        mousePos= posMouse;
+        mousePos = posMouse;
     }
 
-    function createTargetPosArray(_pos: ƒ.Vector3, _distance: number, _positionCount: number): ƒ.Vector3[] {
-        let targetPosArray: Array<ƒ.Vector3> = new Array<ƒ.Vector3>();
-        for (let i = 0; i < _positionCount; i++) {
-            let angle: number = i * (360 / _positionCount);
-            let dir: ƒ.Vector3 = new ƒ.Vector3(1, 0, 0);
-            dir.transform(ƒ.Matrix4x4.ROTATION_Z(angle));
-            dir.normalize(_distance);
-            let position: ƒ.Vector3 = _pos.copy;
-            position.add(dir);
-            targetPosArray.push(position);
+    export function getUnits(_ofPlayer: boolean = true): Array<Unit> {
+        let array: Unit[] = units.getChildren().map(value => <Unit>value);
+        if (_ofPlayer) {
+            return array.filter((value) => {
+                if (value.isPlayer)
+                    return true;
+                return false;
+            });
+        } else {
+            return array.filter((value) => {
+                if (!value.isPlayer)
+                    return true;
+                return false;
+            });
         }
-
-        return targetPosArray;
     }
+
+    // function getAllUnits(): Array<Unit> {
+    //     let playerUnits: Array<Unit> = getUnits();
+    //     let enemyUnits: Array<Unit> = getUnits(false);
+
+    //     return new Array<Unit>().concat(playerUnits, enemyUnits);
+    // }
 }
