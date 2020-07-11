@@ -19,13 +19,15 @@ namespace RTS_V2 {
 
         constructor(_name: string, _pos: ƒ.Vector3, _isPlayer: boolean = true) {
             super(_name);
+            this.isPlayer = _isPlayer;
             this.collisionRange = 1;
             this.shootingRange = 5;
             this.shootingRate = 1000;
             this.speed = 3 / 1000;
-            this.isPlayer = _isPlayer;
+            this.flock = new Flock(this);
             this.createNodes(_pos);
             ƒ.Loop.addEventListener(ƒ.EVENT.LOOP_FRAME, this.update.bind(this));
+            this.healthBar = new Healthbar(this);
         }
 
         public static loadImages(): void {
@@ -47,26 +49,22 @@ namespace RTS_V2 {
 
 
         public update(): void {
-            this.move();
             if (this.target != null) {
                 this.attack();
             } else {
                 this.clearTimer();
             }
             if (this.moveTo != null && this.moveTo != undefined) {
+                this.move(this.moveTo);
                 let pointAt: ƒ.Vector3 = this.moveTo.copy;
-                pointAt.subtract(this.mtxWorld.translation);
-                this.bodyNode.mtxLocal.lookAt(pointAt, ƒ.Vector3.Z());
-                this.bodyNode.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+                Utils.adjustLookAtToGameworld(pointAt, this.bodyNode);
             }
         }
 
         protected follow(): void {
             if (this.target != null && this.target != undefined) {
                 let targetpos: ƒ.Vector3 = this.target.mtxWorld.translation.copy;
-                //targetpos.subtract(this.mtxWorld.translation.copy);
-                this.cannonNode.cmpTransform.lookAt(targetpos, ƒ.Vector3.Z());
-                this.cannonNode.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+                Utils.adjustLookAtToGameworld(targetpos, this.cannonNode);
             }
         }
 

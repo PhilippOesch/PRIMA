@@ -2,15 +2,49 @@
 var RTS_V2;
 (function (RTS_V2) {
     var ƒ = FudgeCore;
+    let AUDIO;
+    (function (AUDIO) {
+        AUDIO["SHOOT"] = "assets/sounds/shooting-sound.ogg";
+        AUDIO["IMPACT"] = "assets/sounds/impact-sound.ogg";
+    })(AUDIO = RTS_V2.AUDIO || (RTS_V2.AUDIO = {}));
+    class Audio extends ƒ.Node {
+        static start() {
+            Audio.appendAudio();
+            RTS_V2.viewport.getGraph().appendChild(Audio.node);
+            ƒ.AudioManager.default.listenTo(Audio.node);
+        }
+        static play(_audio) {
+            Audio.getAudio(_audio).play(true);
+        }
+        static getAudio(_audio) {
+            return Audio.components.get(_audio);
+        }
+        static async appendAudio() {
+            Audio.components.set(AUDIO.SHOOT, new ƒ.ComponentAudio(await ƒ.Audio.load(AUDIO.SHOOT), false, false));
+            Audio.components.set(AUDIO.IMPACT, new ƒ.ComponentAudio(await ƒ.Audio.load(AUDIO.IMPACT), false, false));
+            Audio.components.get(AUDIO.SHOOT).volume = 0.5;
+            Audio.components.get(AUDIO.IMPACT).volume = 0.5;
+            Audio.components.forEach(value => Audio.node.addComponent(value));
+        }
+    }
+    Audio.components = new Map();
+    Audio.node = new Audio("Audio");
+    RTS_V2.Audio = Audio;
+})(RTS_V2 || (RTS_V2 = {}));
+var RTS_V2;
+(function (RTS_V2) {
+    var ƒ = FudgeCore;
     var ƒAid = FudgeAid;
     class Bullet extends ƒ.Node {
         constructor(_pos, _target, _speed = 0.1) {
             super("Bullet");
+            this.damage = 0.5;
             this.collisionActive = true;
             this.target = _target;
             this.speed = _speed;
             this.createNodes(_pos);
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            RTS_V2.Audio.play(RTS_V2.AUDIO.SHOOT);
         }
         static loadImages() {
             Bullet.bulletImg = document.querySelector("#tankbullet");
@@ -47,8 +81,10 @@ var RTS_V2;
                 let targetPos = this.target.mtxWorld.translation.copy;
                 let distanceVector = ƒ.Vector3.DIFFERENCE(thisPos, targetPos);
                 if (distanceVector.magnitudeSquared < this.target.collisionRange) {
+                    this.target.calculateDamage(this);
                     this.collisionActive = false;
                     RTS_V2.bullets.removeChild(this);
+                    RTS_V2.Audio.play(RTS_V2.AUDIO.IMPACT);
                 }
             }
         }
@@ -64,17 +100,141 @@ var RTS_V2;
 })(RTS_V2 || (RTS_V2 = {}));
 var RTS_V2;
 (function (RTS_V2) {
+    class Flock {
+        constructor(_unit) {
+            this.neighborRadius = 5;
+            this.avoidanceRadius = 1.5;
+            this.moveweight = 0.4;
+            this.avoidanceWeight = 0.6;
+            this.unit = _unit;
+            this.squareNeighborRadius = this.neighborRadius ** 2;
+            this.squareAvoidanceRadius = this.avoidanceRadius ** 2;
+        }
+        calculateMove(_move) {
+            let move = ƒ.Vector3.ZERO();
+            let neighbors = this.getNearbyObjects(this.unit);
+            let avoidanceMove = this.avoidance(this.unit, neighbors);
+            avoidanceMove.scale(this.avoidanceWeight);
+            avoidanceMove = this.partialNormalization(avoidanceMove, this.avoidanceWeight);
+            let weightedMove = _move.copy;
+            weightedMove.scale(this.moveweight);
+            weightedMove = this.partialNormalization(weightedMove, this.moveweight);
+            move.add(avoidanceMove);
+            move.add(weightedMove);
+            return move;
+        }
+        avoidance(_node, _neighbors) {
+            if (_neighbors.length == 0) {
+                return ƒ.Vector3.ZERO();
+            }
+            let avoidanceMove = ƒ.Vector3.ZERO();
+            let nAvoide = 0;
+            for (let element of _neighbors) {
+                let distanceVector = ƒ.Vector3.DIFFERENCE(element.mtxWorld.translation, _node.mtxWorld.translation);
+                if (distanceVector.magnitudeSquared < this.squareAvoidanceRadius) {
+                    let avoidVector = ƒ.Vector3.DIFFERENCE(_node.mtxWorld.translation, element.mtxWorld.translation);
+                    avoidanceMove.add(avoidVector);
+                    nAvoide++;
+                }
+            }
+            if (nAvoide > 0)
+                avoidanceMove.scale(1 / nAvoide);
+            return avoidanceMove;
+        }
+        partialNormalization(_vector, _weigth) {
+            if (_vector.magnitudeSquared > _weigth ** 2) {
+                _vector.normalize();
+                _vector.scale(_weigth);
+            }
+            return _vector;
+        }
+        getNearbyObjects(_node) {
+            let nearbyObjects = new Array();
+            let objects = RTS_V2.getUnits();
+            for (let value of objects) {
+                let distanceVector = ƒ.Vector3.DIFFERENCE(value.mtxWorld.translation, _node.mtxWorld.translation);
+                let distanceSquared = distanceVector.magnitudeSquared;
+                if (value != _node && distanceSquared < this.squareNeighborRadius) {
+                    nearbyObjects.push(value);
+                }
+            }
+            return nearbyObjects;
+        }
+    }
+    RTS_V2.Flock = Flock;
+})(RTS_V2 || (RTS_V2 = {}));
+var RTS_V2;
+(function (RTS_V2) {
+    var ƒ = FudgeCore;
+    //import ƒUi = FudgeUserInterface;
+    class Healthbar /* implements ƒ.MutableForUserInterface*/ {
+        constructor(_unit) {
+            //uiController: ƒUi.Controller;
+            this.health = 0;
+            this.unit = _unit;
+            this.health = this.unit.getHealth;
+            this.element = document.createElement("progress");
+            //this.element = document.createElement("custom-healtbar");
+            this.element.value = this.health;
+            this.element.setAttribute("value", this.health + "");
+            this.element.setAttribute("key", "health");
+            this.element.setAttribute("min", "0");
+            //this.element.max = 100;
+            this.element.setAttribute("max", "1");
+            document.body.appendChild(this.element);
+            if (this.unit.isPlayer) {
+                this.element.classList.add("player");
+            }
+            else {
+                this.element.classList.add("enemy");
+            }
+            //this.uiController = new ƒUi.Controller(this, this.element);
+            ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+        }
+        // public getMutator(): ƒ.Mutator {
+        //     let mutator: ƒ.Mutator = {};
+        //     this.updateMutator(mutator);
+        //     return mutator;
+        // }
+        // public updateMutator(_mutator: ƒ.Mutator): void {
+        //     _mutator.health = this.health;
+        //     //console.log(this.health);
+        // }
+        update() {
+            let camera = RTS_V2.viewport.camera;
+            let projection = camera.project(this.unit.mtxWorld.translation.copy);
+            let screenPos = RTS_V2.viewport.pointClipToClient(projection.toVector2());
+            this.element.style.left = screenPos.x + "px";
+            this.element.style.top = screenPos.y + "px";
+            this.element.setAttribute("value", this.unit.getHealth + "");
+        }
+        delete() {
+            ƒ.Loop.removeEventListener("loopFrame" /* LOOP_FRAME */, this.update);
+            document.body.removeChild(this.element);
+        }
+    }
+    RTS_V2.Healthbar = Healthbar;
+})(RTS_V2 || (RTS_V2 = {}));
+var RTS_V2;
+(function (RTS_V2) {
     var ƒ = FudgeCore;
     var ƒAid = FudgeAid;
     let selectedUnits = new Array();
     let startSelectionInfo;
+    let terrainX = 30;
+    let terrainY = 20;
+    let terrainTiling = 5;
     let mousePos;
     //let mousePos= ƒ.Vector2;
     ƒ.RenderManager.initialize(true, false);
     window.addEventListener("load", hndLoad);
     function hndLoad(_event) {
+        // ƒUi.CustomElementTemplate.register("custom-healthbar");
+        // ƒUi.CustomElement.register("custom-healthbar", FudgeUserInterface.CustomElementTemplate);
         const canvas = document.querySelector("canvas");
         let backgroundImg = document.querySelector("#terrain");
+        //prevents the context menu to open
+        canvas.addEventListener("contextmenu", event => event.preventDefault());
         RTS_V2.Bullet.loadImages();
         RTS_V2.TankUnit.loadImages();
         let graph = new ƒ.Node("Game");
@@ -82,17 +242,17 @@ var RTS_V2;
         graph.appendChild(terrain);
         RTS_V2.bullets = new ƒ.Node("Bullets");
         RTS_V2.units = new ƒ.Node("Units");
-        RTS_V2.enemyUnits = new ƒ.Node("EnemyUnits");
         graph.appendChild(RTS_V2.bullets);
         graph.appendChild(RTS_V2.units);
-        graph.appendChild(RTS_V2.enemyUnits);
         let cmpCamera = new ƒ.ComponentCamera();
-        cmpCamera.pivot.translate(ƒ.Vector3.Z(30));
+        cmpCamera.pivot.translate(ƒ.Vector3.Z(35));
         let cameraLookAt = new ƒ.Vector3(0, 0, 0);
         cmpCamera.pivot.lookAt(cameraLookAt);
         cmpCamera.backgroundColor = ƒ.Color.CSS("white");
         RTS_V2.viewport = new ƒ.Viewport();
         RTS_V2.viewport.initialize("Viewport", graph, cmpCamera, canvas);
+        //setup AudioNode
+        RTS_V2.Audio.start();
         createUnits();
         RTS_V2.viewport.addEventListener("\u0192pointerdown" /* DOWN */, pointerDown);
         RTS_V2.viewport.addEventListener("\u0192pointerup" /* UP */, pointerUp);
@@ -121,9 +281,9 @@ var RTS_V2;
         let mtr = new ƒ.Material("mtrTerrain", ƒ.ShaderTexture, coat);
         let terrain = new ƒAid.Node("Terrain", ƒ.Matrix4x4.IDENTITY(), mtr, mesh);
         let terrainsCmpMesh = terrain.getComponent(ƒ.ComponentMesh);
-        terrainsCmpMesh.pivot.scale(new ƒ.Vector3(20, 20, 0));
-        let cmpMesh = terrain.getComponent(ƒ.ComponentMaterial);
-        cmpMesh.pivot.scale(new ƒ.Vector2(5, 5));
+        terrainsCmpMesh.pivot.scale(new ƒ.Vector3(terrainX, terrainY, 0));
+        let cmpMtr = terrain.getComponent(ƒ.ComponentMaterial);
+        cmpMtr.pivot.scale(new ƒ.Vector2(terrainX / terrainTiling, terrainY / terrainTiling));
         return terrain;
     }
     function drawSelectionRectangle(_startClient, _endClient) {
@@ -143,8 +303,8 @@ var RTS_V2;
         let unit2 = new RTS_V2.TankUnit("Unit", new ƒ.Vector3(0, 0, 0.1));
         let unit3 = new RTS_V2.TankUnit("Unit", new ƒ.Vector3(2, 0, 0.1));
         let unit4 = new RTS_V2.TankUnit("Unit", new ƒ.Vector3(2, 2, 0.1));
-        RTS_V2.enemyUnits.appendChild(unit0);
-        RTS_V2.enemyUnits.appendChild(unit1);
+        RTS_V2.units.appendChild(unit0);
+        RTS_V2.units.appendChild(unit1);
         RTS_V2.units.appendChild(unit2);
         RTS_V2.units.appendChild(unit3);
         RTS_V2.units.appendChild(unit4);
@@ -158,12 +318,9 @@ var RTS_V2;
             startSelectionInfo = { startSelectionPos: position, startSelectionClientPos: posMouse };
         }
         else if (_event.which == 3 && selectedUnits.length != 0) {
-            let targetPosArray = createTargetPosArray(position, 1.5, 5);
-            let index = 0;
+            let targetPosArray = RTS_V2.Utils.createTargetPosArray(position, 1.5, selectedUnits.length);
             let enemySelected = null;
-            let enemies = RTS_V2.enemyUnits.getChildren().map((value) => {
-                return value;
-            });
+            let enemies = getUnits(false);
             for (let enemy of enemies) {
                 if (enemy.isInPickingRange(ray)) {
                     enemySelected = enemy;
@@ -175,10 +332,12 @@ var RTS_V2;
                 }
             }
             else {
+                let index = 0;
                 for (let unit of selectedUnits) {
                     unit.setTarget = null;
                     unit.setMove = targetPosArray[index];
-                    index = (index + 1) % targetPosArray.length;
+                    index++;
+                    console.log(targetPosArray);
                 }
             }
         }
@@ -187,14 +346,13 @@ var RTS_V2;
         }
     }
     function pointerUp(_event) {
+        _event.preventDefault();
         let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         let ray = RTS_V2.viewport.getRayFromClient(posMouse);
         if (_event.which == 1) {
             selectedUnits = new Array();
             let endPos = ray.intersectPlane(new ƒ.Vector3(0, 0, 0.1), ƒ.Vector3.Z(1));
-            let allunits = RTS_V2.units.getChildren().map((value) => {
-                return value;
-            });
+            let allunits = getUnits();
             let distanceVector = ƒ.Vector3.DIFFERENCE(startSelectionInfo.startSelectionPos, endPos);
             if (distanceVector.magnitudeSquared < 1) {
                 for (let unit of allunits) {
@@ -231,19 +389,29 @@ var RTS_V2;
         let posMouse = new ƒ.Vector2(_event.canvasX, _event.canvasY);
         mousePos = posMouse;
     }
-    function createTargetPosArray(_pos, _distance, _positionCount) {
-        let targetPosArray = new Array();
-        for (let i = 0; i < _positionCount; i++) {
-            let angle = i * (360 / _positionCount);
-            let dir = new ƒ.Vector3(1, 0, 0);
-            dir.transform(ƒ.Matrix4x4.ROTATION_Z(angle));
-            dir.normalize(_distance);
-            let position = _pos.copy;
-            position.add(dir);
-            targetPosArray.push(position);
+    function getUnits(_ofPlayer = true) {
+        let array = RTS_V2.units.getChildren().map(value => value);
+        if (_ofPlayer) {
+            return array.filter((value) => {
+                if (value.isPlayer)
+                    return true;
+                return false;
+            });
         }
-        return targetPosArray;
+        else {
+            return array.filter((value) => {
+                if (!value.isPlayer)
+                    return true;
+                return false;
+            });
+        }
     }
+    RTS_V2.getUnits = getUnits;
+    // function getAllUnits(): Array<Unit> {
+    //     let playerUnits: Array<Unit> = getUnits();
+    //     let enemyUnits: Array<Unit> = getUnits(false);
+    //     return new Array<Unit>().concat(playerUnits, enemyUnits);
+    // }
 })(RTS_V2 || (RTS_V2 = {}));
 var RTS_V2;
 (function (RTS_V2) {
@@ -252,6 +420,9 @@ var RTS_V2;
         constructor() {
             super(...arguments);
             this.speed = 3 / 1000;
+            this.health = 1;
+            this.armor = 2;
+            this.isDead = false;
             this.shoot = (_node, _target) => {
                 let startingPos = _node.mtxWorld.copy;
                 let bullet = new RTS_V2.Bullet(startingPos.translation.copy, _target);
@@ -263,6 +434,9 @@ var RTS_V2;
         }
         set setTarget(_target) {
             this.target = _target;
+        }
+        get getHealth() {
+            return this.health;
         }
         attack() {
             let targetPos = this.target.mtxWorld.translation.copy;
@@ -279,7 +453,7 @@ var RTS_V2;
             else {
                 this.clearTimer();
             }
-            if (this.target == undefined) {
+            if (this.target == undefined || this.target.isDead) {
                 this.target = null;
                 this.clearTimer();
             }
@@ -293,23 +467,33 @@ var RTS_V2;
                 return false;
             }
         }
+        calculateDamage(_bullet) {
+            this.health -= (_bullet.damage / this.armor);
+            //(<Healthbar>this.healthBar).health = Math.floor(this.health * 100);
+            if (this.health <= 0 && !this.isDead) {
+                RTS_V2.units.removeChild(this);
+                this.isDead = true;
+                this.healthBar.delete();
+                this.healthBar = null;
+            }
+        }
         setPicked(_bool) {
             console.log("isPicked");
         }
-        move() {
+        move(_move) {
             let distanceToTravel = this.speed * ƒ.Loop.timeFrameGame;
-            let move;
-            if (this.moveTo != null) {
-                while (true) {
-                    move = ƒ.Vector3.DIFFERENCE(this.moveTo, this.mtxLocal.translation);
-                    if (move.magnitudeSquared > distanceToTravel * distanceToTravel)
-                        break;
-                    this.moveTo = null;
-                }
-                let pointAt = this.moveTo.copy;
-                pointAt.subtract(this.mtxWorld.translation);
-                this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(move, distanceToTravel));
+            let moveVector;
+            moveVector = ƒ.Vector3.DIFFERENCE(_move, this.mtxLocal.translation);
+            while (true) {
+                moveVector = ƒ.Vector3.DIFFERENCE(this.moveTo, this.mtxLocal.translation);
+                if (moveVector.magnitudeSquared > distanceToTravel ** 2)
+                    break;
+                this.moveTo = null;
             }
+            moveVector = this.flock.calculateMove(moveVector);
+            let pointAt = moveVector.copy;
+            pointAt.subtract(this.mtxWorld.translation);
+            this.cmpTransform.local.translate(ƒ.Vector3.NORMALIZATION(moveVector, distanceToTravel));
         }
         getTextureMaterial(_img) {
             let txt = new ƒ.TextureImage();
@@ -342,13 +526,15 @@ var RTS_V2;
     class TankUnit extends RTS_V2.Unit {
         constructor(_name, _pos, _isPlayer = true) {
             super(_name);
+            this.isPlayer = _isPlayer;
             this.collisionRange = 1;
             this.shootingRange = 5;
             this.shootingRate = 1000;
             this.speed = 3 / 1000;
-            this.isPlayer = _isPlayer;
+            this.flock = new RTS_V2.Flock(this);
             this.createNodes(_pos);
             ƒ.Loop.addEventListener("loopFrame" /* LOOP_FRAME */, this.update.bind(this));
+            this.healthBar = new RTS_V2.Healthbar(this);
         }
         static loadImages() {
             TankUnit.bodyImg = document.querySelector("#tank");
@@ -367,7 +553,6 @@ var RTS_V2;
             }
         }
         update() {
-            this.move();
             if (this.target != null) {
                 this.attack();
             }
@@ -375,18 +560,15 @@ var RTS_V2;
                 this.clearTimer();
             }
             if (this.moveTo != null && this.moveTo != undefined) {
+                this.move(this.moveTo);
                 let pointAt = this.moveTo.copy;
-                pointAt.subtract(this.mtxWorld.translation);
-                this.bodyNode.mtxLocal.lookAt(pointAt, ƒ.Vector3.Z());
-                this.bodyNode.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+                RTS_V2.Utils.adjustLookAtToGameworld(pointAt, this.bodyNode);
             }
         }
         follow() {
             if (this.target != null && this.target != undefined) {
                 let targetpos = this.target.mtxWorld.translation.copy;
-                //targetpos.subtract(this.mtxWorld.translation.copy);
-                this.cannonNode.cmpTransform.lookAt(targetpos, ƒ.Vector3.Z());
-                this.cannonNode.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+                RTS_V2.Utils.adjustLookAtToGameworld(targetpos, this.cannonNode);
             }
         }
         createNodes(_pos) {
@@ -425,5 +607,33 @@ var RTS_V2;
     }
     TankUnit.mesh = new ƒ.MeshSprite();
     RTS_V2.TankUnit = TankUnit;
+})(RTS_V2 || (RTS_V2 = {}));
+var RTS_V2;
+(function (RTS_V2) {
+    var ƒ = FudgeCore;
+    let Utils;
+    (function (Utils) {
+        function adjustLookAtToGameworld(_lookAtPos, _node) {
+            let adjustetLookAtToWorld = _lookAtPos.copy;
+            adjustetLookAtToWorld.subtract(_node.mtxWorld.translation.copy);
+            _node.mtxLocal.lookAt(adjustetLookAtToWorld, ƒ.Vector3.Z());
+            _node.mtxLocal.rotate(new ƒ.Vector3(0, 90, 90));
+        }
+        Utils.adjustLookAtToGameworld = adjustLookAtToGameworld;
+        function createTargetPosArray(_pos, _distance, _positionCount) {
+            let targetPosArray = new Array();
+            for (let i = 0; i < _positionCount; i++) {
+                let angle = i * (360 / _positionCount);
+                let dir = new ƒ.Vector3(1, 0, 0);
+                dir.transform(ƒ.Matrix4x4.ROTATION_Z(angle));
+                dir.normalize(_distance);
+                let position = _pos.copy;
+                position.add(dir);
+                targetPosArray.push(position);
+            }
+            return targetPosArray;
+        }
+        Utils.createTargetPosArray = createTargetPosArray;
+    })(Utils = RTS_V2.Utils || (RTS_V2.Utils = {}));
 })(RTS_V2 || (RTS_V2 = {}));
 //# sourceMappingURL=RealTimeStrategie.js.map
